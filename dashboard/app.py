@@ -183,35 +183,35 @@ st.markdown(f"""
     }}
 
     .stApp {{
-        background-color: #020612;
+        background-color: #010409;
         background-image: 
-            radial-gradient(ellipse at top, {active_theme['bg_radial1']} 0%, {active_theme['bg_radial2']} 50%, #020612 90%),
-            linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-        background-size: 200% 200%, 28px 28px, 28px 28px;
-        animation: ambientBreathe 35s ease infinite;
-        color: #d1d5db;
+            radial-gradient(ellipse at top, {active_theme['bg_radial1']} 0%, {active_theme['bg_radial2']} 50%, #010409 95%),
+            linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+        background-size: 200% 200%, 24px 24px, 24px 24px;
+        animation: ambientBreathe 30s ease infinite;
+        color: #e2e8f0;
         font-family: 'Share Tech Mono', monospace;
     }}
 
     .hud-header {{
         font-family: 'Orbitron', sans-serif;
         letter-spacing: clamp(1px, 0.6vw, 4px);
-        background: linear-gradient(90deg, {active_theme['primary']} 0%, {active_theme['secondary']} 45%, {active_theme['accent']} 85%);
+        background: linear-gradient(90deg, {active_theme['primary']} 0%, {active_theme['secondary']} 45%, {active_theme['accent']} 90%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-size: clamp(1.2rem, 2.2vw, 2.05rem);
+        font-size: clamp(1.2rem, 2.2vw, 2.1rem);
         font-weight: 900;
         margin-bottom: 2px;
-        text-shadow: 0 0 25px {active_theme['glow']};
+        text-shadow: 0 0 30px {active_theme['glow']};
     }}
 
     .telemetry-strip {{
-        background: rgba(8, 16, 32, 0.82);
-        backdrop-filter: blur(14px);
+        background: rgba(6, 12, 24, 0.88);
+        backdrop-filter: blur(16px);
         border: 1px solid {active_theme['border']};
-        border-left: 5px solid {active_theme['primary']};
-        padding: 8px 14px;
+        border-left: 6px solid {active_theme['primary']};
+        padding: 9px 16px;
         border-radius: 6px;
         display: flex;
         flex-wrap: wrap;
@@ -220,8 +220,8 @@ st.markdown(f"""
         align-items: center;
         font-size: clamp(0.72rem, 0.95vw, 0.85rem);
         color: #94a3b8;
-        margin-bottom: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.65);
+        margin-bottom: 14px;
+        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.75);
     }}
     .telemetry-val {{ color: #ffffff; font-weight: bold; }}
 
@@ -238,8 +238,8 @@ st.markdown(f"""
     }}
     .annunciator-warn {{
         background: #dc2626; color: #ffffff;
-        box-shadow: 0 0 22px rgba(220, 38, 38, 0.85);
-        animation: blinkWarn 0.8s infinite alternate;
+        box-shadow: 0 0 25px rgba(220, 38, 38, 0.9);
+        animation: blinkWarn 0.7s infinite alternate;
     }}
     .annunciator-nominal {{
         background: rgba(16, 185, 129, 0.2);
@@ -248,8 +248,8 @@ st.markdown(f"""
 
     .stTabs [data-baseweb="tab-list"] {{
         gap: 6px;
-        background: rgba(4, 9, 20, 0.85);
-        backdrop-filter: blur(12px);
+        background: rgba(4, 9, 20, 0.9);
+        backdrop-filter: blur(14px);
         border: 1px solid {active_theme['border']};
         border-radius: 6px;
         padding: 6px;
@@ -285,20 +285,23 @@ st.markdown(f"""
         border-radius: 4px !important;
         padding: 10px 16px !important;
         min-height: 42px !important;
+        transition: all 0.2s ease !important;
     }}
     div.stButton > button:hover {{
         color: #ffffff !important;
         border-color: {active_theme['primary']} !important;
-        box-shadow: 0 0 18px {active_theme['glow']} !important;
+        box-shadow: 0 0 20px {active_theme['glow']} !important;
+        transform: translateY(-1px);
     }}
 
     .quick-dock {{
-        background: rgba(8, 16, 32, 0.85);
+        background: rgba(6, 12, 24, 0.88);
         backdrop-filter: blur(16px);
         border: 1px solid {active_theme['border']};
         border-radius: 6px;
-        padding: 12px;
+        padding: 14px;
         margin-bottom: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
     }}
 
     .terminal-box {{
@@ -315,7 +318,8 @@ st.markdown(f"""
     }}
 
     .nato-card {{
-        background: rgba(10, 18, 35, 0.88);
+        background: rgba(8, 16, 32, 0.9);
+        backdrop-filter: blur(14px);
         border: 1px solid {active_theme['border']};
         border-left: 6px solid {active_theme['primary']};
         padding: 16px;
@@ -330,7 +334,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 1. SCI-FI HOLOGRAPHIC ENERGY WIREFRAME DRONE (THREE.JS GLSL SHADER)
+# 1. WORLD-CLASS SCI-FI HOLOGRAPHIC DRONE BOOT SCREEN
 # -------------------------------------------------------------
 if not st.session_state.boot_complete:
     hex_color = f"#{active_theme['drone_hex']:06x}"
@@ -343,15 +347,15 @@ if not st.session_state.boot_complete:
         <style>
             body {{ margin: 0; overflow: hidden; background: transparent; font-family: 'Share Tech Mono', monospace; }}
             #hud-overlay {{
-                position: absolute; top: 12px; left: 16px; color: {hex_color};
+                position: absolute; top: 14px; left: 18px; color: {hex_color};
                 font-size: 11px; letter-spacing: 1.5px; text-shadow: 0 0 12px {hex_color};
-                pointer-events: none; line-height: 1.6;
+                pointer-events: none; line-height: 1.65;
             }}
             #target-reticle {{
                 position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                width: 190px; height: 190px; border: 1px dashed rgba(0, 240, 255, 0.45);
+                width: 200px; height: 200px; border: 1px dashed rgba(0, 240, 255, 0.45);
                 border-radius: 50%; pointer-events: none;
-                animation: rotateReticle 12s linear infinite;
+                animation: rotateReticle 15s linear infinite;
             }}
             @keyframes rotateReticle {{
                 from {{ transform: translate(-50%, -50%) rotate(0deg); }}
@@ -362,10 +366,10 @@ if not st.session_state.boot_complete:
     </head>
     <body>
         <div id="hud-overlay">
-            &gt; SYSTEM: SCI-FI HOLOGRAPHIC MATRIX [ACTIVE]<br>
-            &gt; ASSET: MALE TACTICAL UAV // GLSL FRESNEL SHADER HUD<br>
-            &gt; SENSORS: 360° LIDAR + MULTISPECTRAL THERMAL OPTICS<br>
-            &gt; INTERACTION: DRAG / TOUCH TO ROTATE HOLOGRAPHIC MATRIX
+            &gt; SYSTEM: JARVIS HOLOGRAPHIC MATRIX v4.2<br>
+            &gt; ASSET: MALE COMBAT UAV [MQ-9 REAPER // FRESNEL SHADER]<br>
+            &gt; SENSORS: 360° LIDAR + MULTISPECTRAL THERMAL ARRAY<br>
+            &gt; INTERACTION: DRAG / TOUCH TO ROTATE 3D MATRIX
         </div>
         <div id="target-reticle"></div>
         <div id="canvas-container"></div>
@@ -374,7 +378,7 @@ if not st.session_state.boot_complete:
             const container = document.getElementById('canvas-container');
             const scene = new THREE.Scene();
             const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 14, 38);
+            camera.position.set(0, 15, 40);
             camera.lookAt(0, 0, 0);
 
             const renderer = new THREE.WebGLRenderer({{ alpha: true, antialias: true }});
@@ -385,141 +389,144 @@ if not st.session_state.boot_complete:
             const droneGroup = new THREE.Group();
             scene.add(droneGroup);
 
-            // Holographic Sci-Fi Glowing Wireframe Material
-            const holoMat = new THREE.MeshBasicMaterial({{
+            // Sci-Fi Holographic Glowing Wireframe Material
+            const holoWireMat = new THREE.MeshBasicMaterial({{
                 color: {active_theme['drone_hex']},
                 wireframe: true,
                 transparent: true,
-                opacity: 0.9
+                opacity: 0.92
             }});
 
-            const innerGlowMat = new THREE.MeshBasicMaterial({{
+            const holoGlowMat = new THREE.MeshBasicMaterial({{
                 color: {active_theme['laser_hex']},
                 transparent: true,
-                opacity: 0.2,
+                opacity: 0.22,
                 blending: THREE.AdditiveBlending
             }});
 
-            function createHologramPart(geo) {{
+            function createHoloComponent(geo) {{
                 const group = new THREE.Group();
-                const wire = new THREE.Mesh(geo, holoMat);
-                const glow = new THREE.Mesh(geo, innerGlowMat);
-                group.add(wire);
-                group.add(glow);
+                group.add(new THREE.Mesh(geo, holoWireMat));
+                group.add(new THREE.Mesh(geo, holoGlowMat));
                 return group;
             }}
 
-            // 1. Sleek Streamlined Fuselage
+            // 1. Aerodynamic Chined Fuselage
             const fuseShape = new THREE.Shape();
-            fuseShape.moveTo(0, 1.3);
-            fuseShape.bezierCurveTo(1.7, 1.2, 1.8, 0.0, 1.5, -0.7);
-            fuseShape.bezierCurveTo(1.0, -1.3, -1.0, -1.3, -1.5, -0.7);
-            fuseShape.bezierCurveTo(-1.8, 0.0, -1.7, 1.2, 0, 1.3);
+            fuseShape.moveTo(0, 1.35);
+            fuseShape.bezierCurveTo(1.8, 1.2, 1.9, 0.0, 1.6, -0.75);
+            fuseShape.bezierCurveTo(1.1, -1.35, -1.1, -1.35, -1.6, -0.75);
+            fuseShape.bezierCurveTo(-1.9, 0.0, -1.8, 1.2, 0, 1.35);
 
             const fuseGeo = new THREE.ExtrudeGeometry(fuseShape, {{
-                steps: 24, depth: 19, bevelEnabled: true, bevelThickness: 1.6, bevelSize: 0.6
+                steps: 24, depth: 20, bevelEnabled: true, bevelThickness: 1.8, bevelSize: 0.6
             }});
             fuseGeo.center();
-            const fuselage = createHologramPart(fuseGeo);
-            droneGroup.add(fuselage);
+            droneGroup.add(createHoloComponent(fuseGeo));
 
             // Satcom Nose Radome
-            const satcomGeo = new THREE.SphereGeometry(1.4, 18, 18);
-            satcomGeo.scale(0.95, 1.15, 2.8);
-            const satcom = createHologramPart(satcomGeo);
-            satcom.position.set(0, 0.35, 7.8);
+            const satcomGeo = new THREE.SphereGeometry(1.45, 18, 18);
+            satcomGeo.scale(0.95, 1.15, 2.9);
+            const satcom = createHoloComponent(satcomGeo);
+            satcom.position.set(0, 0.35, 8.2);
             droneGroup.add(satcom);
 
             // 2. High-Aspect Ratio Swept Wings with Winglets
-            function createHoloWing(isLeft = true) {{
-                const wingGroup = new THREE.Group();
+            function createWing(isLeft = true) {{
+                const wingGrp = new THREE.Group();
                 const sign = isLeft ? -1 : 1;
 
-                const wingShape = new THREE.Shape();
-                wingShape.moveTo(0, 1.6);
-                wingShape.lineTo(17.5, 0.5);
-                wingShape.lineTo(17.5, -0.5);
-                wingShape.lineTo(0, -1.6);
-                wingShape.closePath();
+                const shape = new THREE.Shape();
+                shape.moveTo(0, 1.6);
+                shape.lineTo(18.0, 0.5);
+                shape.lineTo(18.0, -0.5);
+                shape.lineTo(0, -1.6);
+                shape.closePath();
 
-                const wingGeo = new THREE.ExtrudeGeometry(wingShape, {{
-                    depth: 0.25, bevelEnabled: true, bevelThickness: 0.08, bevelSize: 0.08
-                }});
-                wingGeo.rotateX(Math.PI / 2);
-                const wingMesh = createHologramPart(wingGeo);
-                wingMesh.scale.x = sign;
-                wingMesh.position.set(sign * 1.2, 0.15, 0.3);
-                wingMesh.rotation.y = sign * 0.04;
-                wingMesh.rotation.z = -sign * 0.03;
-                wingGroup.add(wingMesh);
+                const wGeo = new THREE.ExtrudeGeometry(shape, {{ depth: 0.26, bevelEnabled: true, bevelThickness: 0.08, bevelSize: 0.08 }});
+                wGeo.rotateX(Math.PI / 2);
+                const wMesh = createHoloComponent(wGeo);
+                wMesh.scale.x = sign;
+                wMesh.position.set(sign * 1.2, 0.15, 0.3);
+                wMesh.rotation.y = sign * 0.04;
+                wMesh.rotation.z = -sign * 0.03;
+                wingGrp.add(wMesh);
 
                 // Winglet
-                const wingletGeo = new THREE.BoxGeometry(0.18, 2.4, 1.3);
-                const winglet = createHologramPart(wingletGeo);
-                winglet.position.set(sign * 18.6, 1.1, 0.2);
-                winglet.rotation.z = -sign * 0.38;
-                wingGroup.add(winglet);
+                const wletGeo = new THREE.BoxGeometry(0.18, 2.5, 1.4);
+                const wlet = createHoloComponent(wletGeo);
+                wlet.position.set(sign * 19.1, 1.2, 0.2);
+                wlet.rotation.z = -sign * 0.38;
+                wingGrp.add(wlet);
 
-                // External Hardpoints & Munitions
-                for (let pPos of [5.5, 11.2]) {{
+                // Pylons & Missiles
+                for (let p of [6.0, 12.0]) {{
                     const pylonGeo = new THREE.BoxGeometry(0.18, 0.6, 1.8);
-                    const pylon = createHologramPart(pylonGeo);
-                    pylon.position.set(sign * pPos, -0.35, 0.3);
-                    wingGroup.add(pylon);
+                    wingGrp.add(createHoloComponent(pylonGeo)).position.set(sign * p, -0.35, 0.3);
 
-                    const misGeo = new THREE.CylinderGeometry(0.2, 0.2, 3.2, 10);
+                    const misGeo = new THREE.CylinderGeometry(0.2, 0.2, 3.4, 10);
                     misGeo.rotateX(Math.PI / 2);
-                    const mis = createHologramPart(misGeo);
-                    mis.position.set(sign * pPos, -0.75, 0.3);
-                    wingGroup.add(mis);
+                    wingGrp.add(createHoloComponent(misGeo)).position.set(sign * p, -0.78, 0.3);
                 }}
 
-                return wingGroup;
+                return wingGrp;
             }}
 
-            droneGroup.add(createHoloWing(true));
-            droneGroup.add(createHoloWing(false));
+            droneGroup.add(createWing(true));
+            droneGroup.add(createWing(false));
 
-            // 3. Inverted V-Tail Empennage
-            const tailGeo = new THREE.BoxGeometry(0.18, 4.6, 1.6);
-            const leftTail = createHologramPart(tailGeo);
-            leftTail.position.set(-2.0, -1.2, -8.8);
-            leftTail.rotation.z = 0.65; leftTail.rotation.x = -0.22;
-            droneGroup.add(leftTail);
+            // 3. Inverted V-Tail
+            const tailGeo = new THREE.BoxGeometry(0.18, 4.8, 1.6);
+            const lt = createHoloComponent(tailGeo);
+            lt.position.set(-2.1, -1.2, -9.2); lt.rotation.z = 0.65; lt.rotation.x = -0.22;
+            droneGroup.add(lt);
 
-            const rightTail = createHologramPart(tailGeo);
-            rightTail.position.set(2.0, -1.2, -8.8);
-            rightTail.rotation.z = -0.65; rightTail.rotation.x = -0.22;
-            droneGroup.add(rightTail);
+            const rt = createHoloComponent(tailGeo);
+            rt.position.set(2.1, -1.2, -9.2); rt.rotation.z = -0.65; rt.rotation.x = -0.22;
+            droneGroup.add(rt);
 
             // 4. Pusher Propeller
             const propGroup = new THREE.Group();
-            propGroup.position.set(0, 0.1, -9.8);
+            propGroup.position.set(0, 0.1, -10.2);
             droneGroup.add(propGroup);
 
-            const spinnerGeo = new THREE.ConeGeometry(0.55, 1.3, 16);
-            spinnerGeo.rotateX(-Math.PI / 2);
-            propGroup.add(createHologramPart(spinnerGeo));
+            const spinGeo = new THREE.ConeGeometry(0.55, 1.4, 16);
+            spinGeo.rotateX(-Math.PI / 2);
+            propGroup.add(createHoloComponent(spinGeo));
 
-            const bladeMat = new THREE.MeshBasicMaterial({{ color: {active_theme['laser_hex']}, transparent: true, opacity: 0.9 }});
+            const bladeMat = new THREE.MeshBasicMaterial({{ color: {active_theme['laser_hex']}, transparent: true, opacity: 0.95 }});
             for (let i = 0; i < 4; i++) {{
-                const bladeGeo = new THREE.BoxGeometry(3.8, 0.35, 0.04);
-                const blade = new THREE.Mesh(bladeGeo, bladeMat);
-                blade.rotation.z = (Math.PI / 2) * i;
-                propGroup.add(blade);
+                const bGeo = new THREE.BoxGeometry(4.0, 0.35, 0.04);
+                const b = new THREE.Mesh(bGeo, bladeMat);
+                b.rotation.z = (Math.PI / 2) * i;
+                propGroup.add(b);
             }}
 
-            // 5. FLIR Optical Turret
-            const turretGeo = new THREE.SphereGeometry(0.9, 16, 16);
-            const turret = createHologramPart(turretGeo);
-            turret.position.set(0, -1.2, 7.6);
+            // 5. FLIR Turret
+            const turretGeo = new THREE.SphereGeometry(0.95, 16, 16);
+            const turret = createHoloComponent(turretGeo);
+            turret.position.set(0, -1.25, 7.8);
             droneGroup.add(turret);
 
-            // 6. Holographic Radar Platform & Vertical Scan Plane
+            // 6. Floating Holographic Dust Particle System
+            const pCount = 350;
+            const pGeo = new THREE.BufferGeometry();
+            const pPos = new Float32Array(pCount * 3);
+            for (let i = 0; i < pCount * 3; i += 3) {{
+                pPos[i] = (Math.random() - 0.5) * 60;
+                pPos[i+1] = (Math.random() - 0.5) * 40;
+                pPos[i+2] = (Math.random() - 0.5) * 60;
+            }}
+            pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+            const pMat = new THREE.PointsMaterial({{ color: {active_theme['drone_hex']}, size: 0.35, transparent: true, opacity: 0.6 }});
+            const pSystem = new THREE.Points(pGeo, pMat);
+            scene.add(pSystem);
+
+            // 7. Radar Platform & Scan Plane
             const compassGeo = new THREE.RingGeometry(18, 18.25, 64);
             compassGeo.rotateX(Math.PI / 2);
             const compass = new THREE.Mesh(compassGeo, new THREE.MeshBasicMaterial({{
-                color: {active_theme['drone_hex']}, side: THREE.DoubleSide, transparent: true, opacity: 0.35
+                color: {active_theme['drone_hex']}, side: THREE.DoubleSide, transparent: true, opacity: 0.38
             }}));
             compass.position.y = -6.5;
             scene.add(compass);
@@ -527,7 +534,7 @@ if not st.session_state.boot_complete:
             const scanGeo = new THREE.PlaneGeometry(38, 1.4);
             scanGeo.rotateX(Math.PI / 2);
             const scanPlane = new THREE.Mesh(scanGeo, new THREE.MeshBasicMaterial({{
-                color: {active_theme['laser_hex']}, side: THREE.DoubleSide, transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending
+                color: {active_theme['laser_hex']}, side: THREE.DoubleSide, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending
             }}));
             scene.add(scanPlane);
 
@@ -565,7 +572,7 @@ if not st.session_state.boot_complete:
 
             function animate() {{
                 requestAnimationFrame(animate);
-                propGroup.rotation.z += 0.65;
+                propGroup.rotation.z += 0.7;
 
                 scanZ += 0.22 * scanDir;
                 if (scanZ > 10) scanDir = -1;
@@ -581,6 +588,7 @@ if not st.session_state.boot_complete:
                 droneGroup.rotation.x = rotX;
                 droneGroup.position.y = Math.sin(Date.now() * 0.002) * 0.45;
                 compass.rotation.z += 0.002;
+                pSystem.rotation.y += 0.001;
 
                 renderer.render(scene, camera);
             }}
@@ -597,16 +605,16 @@ if not st.session_state.boot_complete:
     """, height=420)
 
     st.markdown(f"""
-    <div style='background: rgba(4, 9, 20, 0.95); border: 1px solid {active_theme['primary']}; border-radius: 6px; padding: clamp(16px, 3vw, 30px); max-width: 820px; margin: 10px auto; box-shadow: 0 0 40px {active_theme['glow']};'>
+    <div style='background: rgba(4, 9, 20, 0.95); border: 1px solid {active_theme['primary']}; border-radius: 6px; padding: clamp(16px, 3vw, 30px); max-width: 820px; margin: 10px auto; box-shadow: 0 0 45px {active_theme['glow']};'>
         <div style='font-family: Orbitron; font-size: clamp(1.1rem, 2.2vw, 1.6rem); color: {active_theme['primary']}; font-weight: 900; letter-spacing: 2px;'>
-            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v21.0
+            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v22.0
         </div>
         <div style='font-size: 0.78rem; color: #64748b; margin-bottom: 14px;'>
             TACTICAL PROPULSION DIGITAL TWIN GROUND STATION // MALE UAV FLEET
         </div>
         <hr style='border: none; border-bottom: 1px solid rgba(255, 255, 255, 0.12); margin-bottom: 14px;' />
         <div style='font-family: Share Tech Mono; font-size: clamp(0.76rem, 0.95vw, 0.85rem); line-height: 1.7; color: #94a3b8;'>
-            <div>[0.001] 3D SCI-FI HOLOGRAPHIC MATRIX: FRESNEL SHADER HUD ... <span style='color:#00ff66;'>[ACTIVE]</span></div>
+            <div>[0.001] SCI-FI HOLOGRAPHIC MATRIX: FRESNEL SHADER HUD ... <span style='color:#00ff66;'>[ACTIVE]</span></div>
             <div>[0.042] MIL-STD-1553B D-BUS: BC & RT-04 FADEC Telemetry Bus ... <span style='color:#00ff66;'>[LOCKED (50Hz)]</span></div>
             <div>[0.108] THERMODYNAMIC TWIN CORE: Calibrating Rotax 915 MVEM & ISA Maps ... <span style='color:#00ff66;'>[ONLINE]</span></div>
             <div>[0.195] EKF KALMAN FILTER: Initializing Q/R Covariance Bounds (±2σ) ... <span style='color:#00ff66;'>[ARMED]</span></div>
@@ -632,7 +640,7 @@ if not st.session_state.boot_complete:
 st.sidebar.markdown(f"""
 <div style='text-align: center; padding: 6px 0;'>
     <div style='font-family: Orbitron; font-size: 1.15rem; color: {active_theme['primary']}; letter-spacing: 2px;'>AEROTWIN TACTICAL</div>
-    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 21.0.0-PRO</div>
+    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 22.0.0-PRO</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -936,7 +944,7 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
-# Voice Synthesizer Hook
+# Voice Synthesizer & Tactile Haptic Audio Hook
 if enable_voice and metrics["severity"] == "RED" and st.session_state.last_voice_alert != "RED" and not spoofed_flag:
     st.session_state.last_voice_alert = "RED"
     components.html("""
@@ -984,7 +992,34 @@ if enable_voice and metrics["severity"] == "RED" and st.session_state.last_voice
 elif metrics["severity"] != "RED":
     st.session_state.last_voice_alert = metrics["severity"]
 
-# Touch-Friendly Quick-Action Dock
+# Touch-Friendly Quick-Action Dock with Audio Click Synthesis
+components.html("""
+<script>
+function playClickSound() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(450, ctx.currentTime);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.04);
+    } catch(e) {}
+}
+window.addEventListener('click', (e) => {
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+        playClickSound();
+    }
+});
+</script>
+""", height=0)
+
 st.markdown("<div class='quick-dock'>", unsafe_allow_html=True)
 st.markdown(f"<div style='font-family: Orbitron; font-size: 0.86rem; color: {active_theme['primary']}; margin-bottom: 8px;'>🕹️ COMBAT PILOT QUICK-ACTION DOCK</div>", unsafe_allow_html=True)
 c_mit1, c_mit2, c_mit3, c_mit4 = st.columns(4)
