@@ -19,7 +19,7 @@ from core.prognostics import EnginePrognostics  # type: ignore
 from core.telemetry_bridge import DroneTelemetryBridge  # type: ignore
 
 st.set_page_config(
-    page_title="AeroTwin Tactical GCS | MALE UAV",
+    page_title="AeroTwin Tactical GCS | Defense-Grade MALE UAV",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -124,6 +124,8 @@ class EmbeddedUAVTransmitter:
 # Session State Initialization
 if "boot_complete" not in st.session_state:
     st.session_state.boot_complete = False
+if "viewport_mode" not in st.session_state:
+    st.session_state.viewport_mode = "🖥️ DESKTOP MODE"
 if "t_idx" not in st.session_state:
     st.session_state.t_idx = 125
 if "is_playing" not in st.session_state:
@@ -164,15 +166,15 @@ THEMES = {
 }
 
 active_theme = THEMES[st.session_state.hud_theme]
+is_mobile = (st.session_state.viewport_mode == "📱 MOBILE TACTICAL")
 
-# Ultra-Modern Responsive & Animated Cockpit Stylesheet
+# High-Tech Responsive Stylesheet
 st.markdown(f"""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Share+Tech+Mono&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
-    /* Animated Ambient Tactical Grid Background */
     @keyframes ambientBreathe {{
         0% {{ background-position: 0% 50%, 0 0, 0 0; }}
         50% {{ background-position: 100% 50%, 14px 14px, 14px 14px; }}
@@ -182,31 +184,29 @@ st.markdown(f"""
     .stApp {{
         background-color: #020612;
         background-image: 
-            radial-gradient(ellipse at top, {active_theme['bg_radial1']} 0%, {active_theme['bg_radial2']} 45%, #020612 90%),
+            radial-gradient(ellipse at top, {active_theme['bg_radial1']} 0%, {active_theme['bg_radial2']} 50%, #020612 90%),
             linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
             linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-        background-size: 200% 200%, 30px 30px, 30px 30px;
+        background-size: 200% 200%, 28px 28px, 28px 28px;
         animation: ambientBreathe 35s ease infinite;
         color: #d1d5db;
         font-family: 'Share Tech Mono', monospace;
     }}
 
-    /* Responsive Main Header */
     .hud-header {{
         font-family: 'Orbitron', sans-serif;
         letter-spacing: clamp(1px, 0.6vw, 4px);
         background: linear-gradient(90deg, {active_theme['primary']} 0%, {active_theme['secondary']} 45%, {active_theme['accent']} 85%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-size: clamp(1.25rem, 2.3vw, 2.05rem);
+        font-size: clamp(1.2rem, 2.2vw, 2.05rem);
         font-weight: 900;
         margin-bottom: 2px;
         text-shadow: 0 0 25px {active_theme['glow']};
     }}
 
-    /* Responsive Telemetry Strip */
     .telemetry-strip {{
-        background: rgba(8, 16, 32, 0.78);
+        background: rgba(8, 16, 32, 0.82);
         backdrop-filter: blur(14px);
         -webkit-backdrop-filter: blur(14px);
         border: 1px solid {active_theme['border']};
@@ -218,7 +218,7 @@ st.markdown(f"""
         gap: 10px 18px;
         justify-content: space-between;
         align-items: center;
-        font-size: clamp(0.72rem, 1vw, 0.85rem);
+        font-size: clamp(0.72rem, 0.95vw, 0.85rem);
         color: #94a3b8;
         margin-bottom: 12px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.65);
@@ -228,7 +228,6 @@ st.markdown(f"""
         font-weight: bold;
     }}
 
-    /* Annunciator Warning Box */
     .annunciator-box {{
         padding: 5px 12px;
         border-radius: 4px;
@@ -252,7 +251,6 @@ st.markdown(f"""
         color: #34d399;
     }}
 
-    /* Mobile Responsive Touch-Scrollable Tabs */
     .stTabs [data-baseweb="tab-list"] {{
         gap: 6px;
         background: rgba(4, 9, 20, 0.85);
@@ -264,14 +262,6 @@ st.markdown(f"""
         overflow-x: auto !important;
         white-space: nowrap !important;
         -webkit-overflow-scrolling: touch !important;
-        scrollbar-width: thin;
-    }}
-    .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar {{
-        height: 4px;
-    }}
-    .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar-thumb {{
-        background: {active_theme['border']};
-        border-radius: 2px;
     }}
     .stTabs [data-baseweb="tab"] {{
         font-family: 'Orbitron', sans-serif !important;
@@ -283,7 +273,6 @@ st.markdown(f"""
         border: 1px solid rgba(255, 255, 255, 0.05) !important;
         border-radius: 4px !important;
         flex-shrink: 0 !important;
-        transition: all 0.2s ease !important;
     }}
     .stTabs [aria-selected="true"] {{
         color: {active_theme['primary']} !important;
@@ -292,7 +281,6 @@ st.markdown(f"""
         box-shadow: 0 0 16px {active_theme['glow']} !important;
     }}
 
-    /* Ergonomic Pill Buttons with Haptic Click Feel */
     div.stButton > button {{
         font-family: 'Orbitron', sans-serif !important;
         font-size: clamp(0.68rem, 0.82vw, 0.74rem) !important;
@@ -302,20 +290,14 @@ st.markdown(f"""
         border: 1px solid {active_theme['border']} !important;
         border-radius: 4px !important;
         padding: 10px 16px !important;
-        min-height: 44px !important;
-        transition: all 0.18s ease-in-out !important;
+        min-height: 42px !important;
     }}
     div.stButton > button:hover {{
         color: #ffffff !important;
         border-color: {active_theme['primary']} !important;
         box-shadow: 0 0 18px {active_theme['glow']} !important;
-        transform: translateY(-1px);
-    }}
-    div.stButton > button:active {{
-        transform: scale(0.98);
     }}
 
-    /* Touch Friendly Quick-Dock Container */
     .quick-dock {{
         background: rgba(8, 16, 32, 0.85);
         backdrop-filter: blur(16px);
@@ -324,23 +306,30 @@ st.markdown(f"""
         border-radius: 6px;
         padding: 12px;
         margin-bottom: 15px;
-        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.6);
     }}
 
-    /* Mobile Layout Tweaks */
-    @media (max-width: 768px) {{
-        .telemetry-strip {{
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 6px;
-        }}
-        .hud-header {{
-            font-size: 1.35rem;
-        }}
-        .boot-container {{
-            margin: 20px 10px !important;
-            padding: 20px !important;
-        }}
+    .terminal-box {{
+        background: #010409;
+        border: 1px solid {active_theme['primary']};
+        border-radius: 4px;
+        padding: 12px;
+        height: 250px;
+        overflow-y: auto;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 0.81rem;
+        color: #00ff66;
+        line-height: 1.55;
+    }}
+
+    .nato-card {{
+        background: rgba(10, 18, 35, 0.88);
+        border: 1px solid {active_theme['border']};
+        border-left: 6px solid {active_theme['primary']};
+        padding: 16px;
+        border-radius: 4px;
+        color: #cbd5e1;
+        font-size: 0.84rem;
+        line-height: 1.75;
     }}
 
     @keyframes blinkWarn {{
@@ -357,7 +346,7 @@ if not st.session_state.boot_complete:
     st.markdown(f"""
     <div style='background: rgba(4, 9, 20, 0.95); border: 1px solid {active_theme['primary']}; border-radius: 6px; padding: clamp(20px, 4vw, 40px); max-width: 820px; margin: clamp(20px, 6vh, 60px) auto; box-shadow: 0 0 45px {active_theme['glow']};'>
         <div style='font-family: Orbitron; font-size: clamp(1.2rem, 2.5vw, 1.75rem); color: {active_theme['primary']}; font-weight: 900; letter-spacing: 2px;'>
-            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v15.0
+            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v16.0
         </div>
         <div style='font-size: 0.78rem; color: #64748b; margin-bottom: 18px;'>
             TACTICAL PROPULSION DIGITAL TWIN GROUND STATION // MALE UAV FLEET
@@ -391,9 +380,24 @@ if not st.session_state.boot_complete:
 st.sidebar.markdown(f"""
 <div style='text-align: center; padding: 6px 0;'>
     <div style='font-family: Orbitron; font-size: 1.15rem; color: {active_theme['primary']}; letter-spacing: 2px;'>AEROTWIN TACTICAL</div>
-    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 15.0.0-PRO</div>
+    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 16.0.0-PRO</div>
 </div>
 """, unsafe_allow_html=True)
+
+# VIEWPORT SWITCHER
+st.sidebar.markdown("---")
+st.sidebar.markdown(f"<div style='font-family: Orbitron; font-size: 0.8rem; color: {active_theme['primary']};'>DISPLAY WORKSPACE MODE</div>", unsafe_allow_html=True)
+vp_mode = st.sidebar.radio(
+    "Select Display Layout:",
+    ["🖥️ DESKTOP MODE", "📱 MOBILE TACTICAL"],
+    index=0 if st.session_state.viewport_mode == "🖥️ DESKTOP MODE" else 1,
+    label_visibility="collapsed"
+)
+if vp_mode != st.session_state.viewport_mode:
+    st.session_state.viewport_mode = vp_mode
+    st.rerun()
+
+is_mobile = (st.session_state.viewport_mode == "📱 MOBILE TACTICAL")
 
 selected_theme = st.sidebar.selectbox(
     "OPTICAL SPECTRUM HUD THEME",
@@ -562,6 +566,7 @@ squawk_status = "<span style='color:#ef4444; font-weight:bold;'>7700 [EMERGENCY]
 st.markdown(f"""
 <div class='telemetry-strip'>
     <div>ZULU: <span class='telemetry-val'>{zulu_now}</span></div>
+    <div>VIEWPORT: <span class='telemetry-val'>{st.session_state.viewport_mode}</span></div>
     <div>IFF SQUAWK: {squawk_status}</div>
     <div>REGIME: <span class='telemetry-val'>{current_row['flight_phase']}</span></div>
     <div>ALT: <span class='telemetry-val'>{current_row['altitude_m']} M</span></div>
@@ -571,48 +576,13 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Glass Cockpit PFD (Speed & Altitude Tapes + Horizon) + Gauges
-pfd_col, g1, g2, g3, g4 = st.columns([1.35, 1, 1, 1, 1])
-
-with pfd_col:
-    pitch = float(current_row['pitch_deg'])
-    cur_spd = 115 if not st.session_state.limp_mode else 92
-    cur_alt = int(current_row['altitude_m'])
-
-    fig_pfd = go.Figure()
-    fig_pfd.add_shape(type="rect", x0=-8, y0=-10, x1=8, y1=pitch, fillcolor="#78350f", line=dict(width=0))
-    fig_pfd.add_shape(type="rect", x0=-8, y0=pitch, x1=8, y1=10, fillcolor="#0369a1", line=dict(width=0))
-    fig_pfd.add_shape(type="line", x0=-6, y0=pitch, x1=6, y1=pitch, line=dict(color="#ffffff", width=2))
-    fig_pfd.add_shape(type="line", x0=-2, y0=pitch + 3, x1=2, y1=pitch + 3, line=dict(color="rgba(255,255,255,0.7)", width=1.5))
-    fig_pfd.add_shape(type="line", x0=-2, y0=pitch - 3, x1=2, y1=pitch - 3, line=dict(color="rgba(255,255,255,0.7)", width=1.5, dash="dot"))
-
-    # Airspeed Tape (Left)
-    fig_pfd.add_shape(type="rect", x0=-10, y0=-10, x1=-7.5, y1=10, fillcolor="rgba(8,16,32,0.9)", line=dict(color=active_theme['border'], width=1))
-    fig_pfd.add_annotation(x=-8.75, y=0, text=f"<b>{cur_spd}</b><br><span style='font-size:9px'>KCAS</span>", showarrow=False, font=dict(color="#00ff66", size=11, family="Orbitron"))
-
-    # Altitude Tape (Right)
-    fig_pfd.add_shape(type="rect", x0=7.5, y0=-10, x1=10, y1=10, fillcolor="rgba(8,16,32,0.9)", line=dict(color=active_theme['border'], width=1))
-    fig_pfd.add_annotation(x=8.75, y=0, text=f"<b>{cur_alt}</b><br><span style='font-size:9px'>M</span>", showarrow=False, font=dict(color="#00f0ff", size=11, family="Orbitron"))
-
-    fig_pfd.add_shape(type="line", x0=-3.5, y0=0, x1=-1.2, y1=0, line=dict(color="#facc15", width=3))
-    fig_pfd.add_shape(type="line", x0=1.2, y0=0, x1=3.5, y1=0, line=dict(color="#facc15", width=3))
-    fig_pfd.add_shape(type="circle", x0=-0.5, y0=-0.5, x1=0.5, y1=0.5, line=dict(color="#facc15", width=2))
-
-    fig_pfd.update_layout(
-        title={'text': "<b>TACTICAL GLASS PFD</b>", 'font': {'size': 11, 'family': 'Orbitron', 'color': active_theme['primary']}},
-        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(8,16,32,0.95)',
-        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-10, 10]),
-        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-10, 10]),
-        height=175, margin=dict(l=5, r=5, t=30, b=5)
-    )
-    st.plotly_chart(fig_pfd, use_container_width=True)
-
-def make_hud_gauge(title, value, min_v, max_v, unit, alert_v, warn_v, is_invert=False):
+# Helper function for gauges
+def make_hud_gauge(title, value, min_v, max_v, unit, alert_v, warn_v, is_invert=False, height=170):
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
         value=value,
         title={'text': f"<b>{title}</b>", 'font': {'size': 11, 'family': 'Orbitron', 'color': active_theme['primary']}},
-        number={'suffix': f" {unit}", 'font': {'size': 18, 'family': 'Orbitron', 'color': '#ffffff'}},
+        number={'suffix': f" {unit}", 'font': {'size': 17, 'family': 'Orbitron', 'color': '#ffffff'}},
         gauge={
             'axis': {'range': [min_v, max_v], 'tickwidth': 1, 'tickcolor': "#8892b0"},
             'bar': {'color': active_theme['primary'], 'thickness': 0.24},
@@ -627,17 +597,72 @@ def make_hud_gauge(title, value, min_v, max_v, unit, alert_v, warn_v, is_invert=
             'threshold': {'line': {'color': "#ff003c", 'width': 3}, 'thickness': 0.75, 'value': alert_v}
         }
     ))
-    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', height=175, margin=dict(l=8, r=8, t=30, b=8), font={'family': "Share Tech Mono"})
+    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', height=height, margin=dict(l=6, r=6, t=28, b=6), font={'family': "Share Tech Mono"})
     return fig
 
-with g1:
-    st.plotly_chart(make_hud_gauge("HEALTH INDEX", metrics['health_index'], 0, 100, "%", 45, 75, is_invert=True), use_container_width=True)
-with g2:
-    st.plotly_chart(make_hud_gauge("CYLINDER TEMP", current_row['cht_actual'], 80, 170, "°C", 145, 130), use_container_width=True)
-with g3:
-    st.plotly_chart(make_hud_gauge("OIL PRESSURE", current_row['oil_press_actual'], 0, 6, "bar", 1.8, 2.5, is_invert=True), use_container_width=True)
-with g4:
-    st.plotly_chart(make_hud_gauge("CRANKSHAFT", current_row['rpm'], 0, 6000, "RPM", 5600, 5200), use_container_width=True)
+# PFD Figure Builder
+def make_pfd_figure(pitch, cur_spd, cur_alt, height=170):
+    fig_pfd = go.Figure()
+    fig_pfd.add_shape(type="rect", x0=-8, y0=-10, x1=8, y1=pitch, fillcolor="#78350f", line=dict(width=0))
+    fig_pfd.add_shape(type="rect", x0=-8, y0=pitch, x1=8, y1=10, fillcolor="#0369a1", line=dict(width=0))
+    fig_pfd.add_shape(type="line", x0=-6, y0=pitch, x1=6, y1=pitch, line=dict(color="#ffffff", width=2))
+    fig_pfd.add_shape(type="line", x0=-2, y0=pitch + 3, x1=2, y1=pitch + 3, line=dict(color="rgba(255,255,255,0.7)", width=1.5))
+    fig_pfd.add_shape(type="line", x0=-2, y0=pitch - 3, x1=2, y1=pitch - 3, line=dict(color="rgba(255,255,255,0.7)", width=1.5, dash="dot"))
+
+    # Airspeed Tape (Left)
+    fig_pfd.add_shape(type="rect", x0=-10, y0=-10, x1=-7.5, y1=10, fillcolor="rgba(8,16,32,0.9)", line=dict(color=active_theme['border'], width=1))
+    fig_pfd.add_annotation(x=-8.75, y=0, text=f"<b>{cur_spd}</b><br><span style='font-size:9px'>KCAS</span>", showarrow=False, font=dict(color="#00ff66", size=10, family="Orbitron"))
+
+    # Altitude Tape (Right)
+    fig_pfd.add_shape(type="rect", x0=7.5, y0=-10, x1=10, y1=10, fillcolor="rgba(8,16,32,0.9)", line=dict(color=active_theme['border'], width=1))
+    fig_pfd.add_annotation(x=8.75, y=0, text=f"<b>{cur_alt}</b><br><span style='font-size:9px'>M</span>", showarrow=False, font=dict(color="#00f0ff", size=10, family="Orbitron"))
+
+    # Aircraft Center Symbol
+    fig_pfd.add_shape(type="line", x0=-3.5, y0=0, x1=-1.2, y1=0, line=dict(color="#facc15", width=3))
+    fig_pfd.add_shape(type="line", x0=1.2, y0=0, x1=3.5, y1=0, line=dict(color="#facc15", width=3))
+    fig_pfd.add_shape(type="circle", x0=-0.5, y0=-0.5, x1=0.5, y1=0.5, line=dict(color="#facc15", width=2))
+
+    fig_pfd.update_layout(
+        title={'text': "<b>TACTICAL GLASS PFD</b>", 'font': {'size': 11, 'family': 'Orbitron', 'color': active_theme['primary']}},
+        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(8,16,32,0.95)',
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-10, 10]),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-10, 10]),
+        height=height, margin=dict(l=5, r=5, t=28, b=5)
+    )
+    return fig_pfd
+
+pitch = float(current_row['pitch_deg'])
+cur_spd = 115 if not st.session_state.limp_mode else 92
+cur_alt = int(current_row['altitude_m'])
+
+# DYNAMIC RESPONSIVE LAYOUT SWITCHING (DESKTOP vs MOBILE)
+if not is_mobile:
+    # Desktop 5-Column Cockpit View
+    pfd_col, g1, g2, g3, g4 = st.columns([1.35, 1, 1, 1, 1])
+    with pfd_col:
+        st.plotly_chart(make_pfd_figure(pitch, cur_spd, cur_alt, height=170), use_container_width=True)
+    with g1:
+        st.plotly_chart(make_hud_gauge("HEALTH INDEX", metrics['health_index'], 0, 100, "%", 45, 75, is_invert=True), use_container_width=True)
+    with g2:
+        st.plotly_chart(make_hud_gauge("CYLINDER TEMP", current_row['cht_actual'], 80, 170, "°C", 145, 130), use_container_width=True)
+    with g3:
+        st.plotly_chart(make_hud_gauge("OIL PRESSURE", current_row['oil_press_actual'], 0, 6, "bar", 1.8, 2.5, is_invert=True), use_container_width=True)
+    with g4:
+        st.plotly_chart(make_hud_gauge("CRANKSHAFT", current_row['rpm'], 0, 6000, "RPM", 5600, 5200), use_container_width=True)
+else:
+    # Mobile 2x2 Compact Grid View
+    st.plotly_chart(make_pfd_figure(pitch, cur_spd, cur_alt, height=150), use_container_width=True)
+    mob_row1_col1, mob_row1_col2 = st.columns(2)
+    with mob_row1_col1:
+        st.plotly_chart(make_hud_gauge("HEALTH INDEX", metrics['health_index'], 0, 100, "%", 45, 75, is_invert=True, height=150), use_container_width=True)
+    with mob_row1_col2:
+        st.plotly_chart(make_hud_gauge("CYLINDER TEMP", current_row['cht_actual'], 80, 170, "°C", 145, 130, height=150), use_container_width=True)
+
+    mob_row2_col1, mob_row2_col2 = st.columns(2)
+    with mob_row2_col1:
+        st.plotly_chart(make_hud_gauge("OIL PRESSURE", current_row['oil_press_actual'], 0, 6, "bar", 1.8, 2.5, is_invert=True, height=150), use_container_width=True)
+    with mob_row2_col2:
+        st.plotly_chart(make_hud_gauge("CRANKSHAFT", current_row['rpm'], 0, 6000, "RPM", 5600, 5200, height=150), use_container_width=True)
 
 # Advisory Banner
 if spoofed_flag:
@@ -715,31 +740,31 @@ if enable_voice and metrics["severity"] == "RED" and st.session_state.last_voice
 elif metrics["severity"] != "RED":
     st.session_state.last_voice_alert = metrics["severity"]
 
-# Touch-Friendly Quick-Action Dock (Like iOS/Android Floating Command Bar)
+# Touch-Friendly Quick-Action Dock
 st.markdown("<div class='quick-dock'>", unsafe_allow_html=True)
-st.markdown(f"<div style='font-family: Orbitron; font-size: 0.88rem; color: {active_theme['primary']}; margin-bottom: 8px;'>🕹️ COMBAT PILOT QUICK-ACTION DOCK</div>", unsafe_allow_html=True)
+st.markdown(f"<div style='font-family: Orbitron; font-size: 0.86rem; color: {active_theme['primary']}; margin-bottom: 8px;'>🕹️ COMBAT PILOT QUICK-ACTION DOCK</div>", unsafe_allow_html=True)
 c_mit1, c_mit2, c_mit3, c_mit4 = st.columns(4)
 with c_mit1:
-    if st.button("🚨 " + ("DISENGAGE LIMP-HOME" if st.session_state.limp_mode else "65% LIMP-HOME THROTTLE"), use_container_width=True):
+    if st.button("🚨 " + ("DISENGAGE LIMP" if st.session_state.limp_mode else "65% LIMP THROTTLE"), use_container_width=True):
         st.session_state.limp_mode = not st.session_state.limp_mode
         st.rerun()
 with c_mit2:
-    if st.button("💧 " + ("RESTORE MIXTURE" if st.session_state.fuel_enrich else "ENRICH QUENCH"), use_container_width=True):
+    if st.button("💧 " + ("RESTORE MIX" if st.session_state.fuel_enrich else "ENRICH QUENCH"), use_container_width=True):
         st.session_state.fuel_enrich = not st.session_state.fuel_enrich
         st.rerun()
 with c_mit3:
-    if st.button("💥 " + ("JETTISON ACTIVE (-250kg)" if st.session_state.stores_jettison else "JETTISON UNDERWING STORES"), use_container_width=True):
+    if st.button("💥 " + ("JETTISON ACTIVE" if st.session_state.stores_jettison else "JETTISON STORES"), use_container_width=True):
         st.session_state.stores_jettison = not st.session_state.stores_jettison
         st.rerun()
 with c_mit4:
     status_mit = []
-    if st.session_state.limp_mode: status_mit.append("LIMP ACTIVE")
-    if st.session_state.fuel_enrich: status_mit.append("QUENCH ON")
+    if st.session_state.limp_mode: status_mit.append("LIMP")
+    if st.session_state.fuel_enrich: status_mit.append("QUENCH")
     if st.session_state.stores_jettison: status_mit.append("STORES JETTISONED")
-    st.caption("Active Status: " + (", ".join(status_mit) if status_mit else "NOMINAL PATROL"))
+    st.caption("Status: " + (", ".join(status_mit) if status_mit else "NOMINAL"))
 st.markdown("</div>", unsafe_allow_html=True)
 
-# Interactive Emergency Combat Checklist (ECL)
+# Emergency Combat Checklist (ECL)
 with st.expander("📋 EMERGENCY COMBAT CHECKLIST (ECL) // MAYDAY DRILL", expanded=(metrics["severity"] == "RED")):
     col_ecl1, col_ecl2 = st.columns(2)
     with col_ecl1:
@@ -750,6 +775,21 @@ with st.expander("📋 EMERGENCY COMBAT CHECKLIST (ECL) // MAYDAY DRILL", expand
         st.checkbox("4. IFF Transponder: Squawk 7700 Declared to Air Traffic Control", value=(metrics["severity"] == "RED"))
         st.checkbox("5. Autonomous RTB Waypoint Vector: Armed around Hostile SAM Dome", value=(metrics["severity"] == "RED"))
         st.checkbox("6. Swarm Datalink: Surveillance Handover Handshake with UAV-02", value=True)
+
+# Height configuration for graphs based on viewport mode
+plot_h = 270 if is_mobile else 360
+radar_h = 320 if is_mobile else 460
+core_3d_h = 340 if is_mobile else 480
+
+hud_plot_layout = dict(
+    paper_bgcolor='rgba(8, 16, 32, 0.65)',
+    plot_bgcolor='rgba(4, 9, 20, 0.85)',
+    font=dict(family='Share Tech Mono', color='#8892b0'),
+    margin=dict(l=25, r=15, t=25, b=20),
+    xaxis=dict(gridcolor='rgba(255, 255, 255, 0.08)', zerolinecolor=active_theme['border']),
+    yaxis=dict(gridcolor='rgba(255, 255, 255, 0.08)', zerolinecolor=active_theme['border']),
+    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+)
 
 # Navigation Tabs (Mobile Touch Swipeable)
 tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
@@ -763,20 +803,10 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
     "📡 MIL-STD-1553B & NATO DEBRIEF"
 ])
 
-hud_plot_layout = dict(
-    paper_bgcolor='rgba(8, 16, 32, 0.65)',
-    plot_bgcolor='rgba(4, 9, 20, 0.85)',
-    font=dict(family='Share Tech Mono', color='#8892b0'),
-    margin=dict(l=35, r=20, t=30, b=25),
-    xaxis=dict(gridcolor='rgba(255, 255, 255, 0.08)', zerolinecolor=active_theme['border']),
-    yaxis=dict(gridcolor='rgba(255, 255, 255, 0.08)', zerolinecolor=active_theme['border']),
-    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-)
-
 with tab1:
-    col_t1, col_t2 = st.columns(2)
+    col_t1, col_t2 = st.columns(2 if not is_mobile else 1)
     with col_t1:
-        st.markdown(f"<div style='color: {active_theme['primary']}; font-weight: bold;'>CYLINDER HEAD TEMPERATURE: RAW SENSOR VS. EKF FILTER VS. TWIN</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='color: {active_theme['primary']}; font-weight: bold;'>CYLINDER HEAD TEMPERATURE (THERMAL RESIDUAL)</div>", unsafe_allow_html=True)
         time_slice = df['timestamp'][:t_idx+1]
         raw_cht = df['cht_actual'][:t_idx+1]
         ekf_cht = raw_cht.rolling(window=4, min_periods=1).mean()
@@ -789,7 +819,7 @@ with tab1:
         fig_cht.add_trace(go.Scatter(x=time_slice, y=ekf_cht, mode='lines', line=dict(color=active_theme['primary'], width=2.5), name="EKF Filtered State"))
         fig_cht.add_trace(go.Scatter(x=time_slice, y=df['cht_physics'][:t_idx+1], mode='lines', line=dict(color="#94a3b8", dash="dash", width=2), name="Physics Twin Target"))
         fig_cht.add_hline(y=145.0, line_dash="dot", line_color="#ffb703", annotation_text="Limit (145°C)")
-        fig_cht.update_layout(hud_plot_layout, height=310, yaxis_title="°C")
+        fig_cht.update_layout(hud_plot_layout, height=plot_h, yaxis_title="°C")
         st.plotly_chart(fig_cht, use_container_width=True)
 
     with col_t2:
@@ -797,8 +827,8 @@ with tab1:
         fig_oil = go.Figure()
         fig_oil.add_trace(go.Scatter(x=time_slice, y=df['oil_press_actual'][:t_idx+1], name="Oil Pressure Actual", line=dict(color=active_theme['accent'], width=3)))
         fig_oil.add_trace(go.Scatter(x=time_slice, y=df['oil_press_physics'][:t_idx+1], name="Physics Baseline", line=dict(color="#94a3b8", dash="dash", width=2)))
-        fig_oil.add_hline(y=1.5, line_dash="dot", line_color="#ff003c", annotation_text="Cavitation Limit (1.5 bar)")
-        fig_oil.update_layout(hud_plot_layout, height=310, yaxis_title="bar")
+        fig_oil.add_hline(y=1.5, line_dash="dot", line_color="#ff003c", annotation_text="Limit (1.5 bar)")
+        fig_oil.update_layout(hud_plot_layout, height=plot_h, yaxis_title="bar")
         st.plotly_chart(fig_oil, use_container_width=True)
 
     st.markdown(f"<div style='color: {active_theme['primary']}; font-weight: bold; margin-top: 10px;'>SUBSYSTEM RESIDUAL ERROR MATRIX</div>", unsafe_allow_html=True)
@@ -812,8 +842,6 @@ with tab1:
 
 with tab2:
     st.markdown(f"<div style='color: {active_theme['primary']}; font-weight: bold;'>TURBOCHARGER COMPRESSOR MAP & DYNAMIC SURGE MARGIN</div>", unsafe_allow_html=True)
-    st.caption("Real-time compressor operating point on mass flow vs pressure ratio map with aerodynamic surge boundary.")
-
     m_flow = np.linspace(0.04, 0.22, 100)
     surge_line = 1.05 + 10.5 * m_flow - 22.0 * (m_flow**2)
     choke_line = 1.0 + 4.2 * m_flow
@@ -845,7 +873,7 @@ with tab2:
     ))
 
     fig_turbo.update_layout(
-        hud_plot_layout, height=360,
+        hud_plot_layout, height=plot_h,
         xaxis_title="Corrected Air Mass Flow ṁ_corr (kg/s)",
         yaxis_title="Total Pressure Ratio Π_c",
         xaxis=dict(range=[0.03, 0.24]), yaxis=dict(range=[1.0, 2.6])
@@ -878,17 +906,16 @@ with tab3:
     fig_pv.add_trace(go.Scatter(x=v_loop, y=p_loop, fill='toself', fillcolor='rgba(255, 0, 60, 0.2)' if metrics['severity'] == "RED" else 'rgba(0, 255, 102, 0.2)',
                                 line=dict(color='#ff003c' if metrics['severity'] == "RED" else '#00ff66', width=3), name="Active Cycle"))
 
-    # Version-safe trapezoidal integration
     delta_p = p_exp - p_comp
     work_integral = float(np.sum(0.5 * (delta_p[:-1] + delta_p[1:]) * np.diff(v_arr)))
     imep_val = round(work_integral / v_d, 1)
     thermal_eff = round(max(15.0, min(36.0, 34.0 - (current_row['cht_actual'] - 110.0) * 0.35)), 1)
 
     fig_pv.update_layout(
-        hud_plot_layout, height=360,
-        xaxis_title="Cylinder Volume (cc)", yaxis_title="In-Cylinder Pressure (kPa)",
+        hud_plot_layout, height=plot_h,
+        xaxis_title="Cylinder Volume (cc)", yaxis_title="Pressure (kPa)",
         annotations=[
-            dict(x=v_c + 20, y=p_peak * 0.9, text=f"IMEP: {imep_val} kPa | η_th: {thermal_eff}%", showarrow=False, font=dict(color=active_theme['primary'], size=13))
+            dict(x=v_c + 20, y=p_peak * 0.9, text=f"IMEP: {imep_val} kPa | η_th: {thermal_eff}%", showarrow=False, font=dict(color=active_theme['primary'], size=12))
         ]
     )
     st.plotly_chart(fig_pv, use_container_width=True)
@@ -910,13 +937,13 @@ with tab4:
 
     fig_waterfall = go.Figure(data=go.Heatmap(
         z=spec_matrix, x=list(df['timestamp'][:t_steps]), y=freq_bins,
-        colorscale='Viridis', colorbar=dict(title="Energy (G²/Hz)")
+        colorscale='Viridis', colorbar=dict(title="Energy")
     ))
-    fig_waterfall.update_layout(hud_plot_layout, height=360, xaxis_title="MET (Seconds)", yaxis_title="Frequency Band (Hz)")
+    fig_waterfall.update_layout(hud_plot_layout, height=plot_h, xaxis_title="MET (Seconds)", yaxis_title="Frequency Band (Hz)")
     st.plotly_chart(fig_waterfall, use_container_width=True)
 
 with tab5:
-    col_xai1, col_xai2 = st.columns([3, 2])
+    col_xai1, col_xai2 = st.columns([3, 2] if not is_mobile else [1, 1])
     with col_xai1:
         st.markdown(f"<div style='color: {active_theme['primary']}; font-weight: bold;'>EXPLAINABLE AI (XAI) ATTRIBUTION WATERFALL</div>", unsafe_allow_html=True)
         cht_penalty = min(45.0, metrics['residuals']['cht_delta'] * 1.8)
@@ -935,20 +962,18 @@ with tab5:
             increasing={"marker": {"color": "#00ff66"}},
             totals={"marker": {"color": active_theme['primary']}}
         ))
-        fig_xai.update_layout(hud_plot_layout, height=360, yaxis_title="Health %")
+        fig_xai.update_layout(hud_plot_layout, height=plot_h, yaxis_title="Health %")
         st.plotly_chart(fig_xai, use_container_width=True)
 
     with col_xai2:
         st.markdown(f"<div style='color: {active_theme['accent']}; font-weight: bold;'>ONLINE ESTIMATED DEGRADATION PARAMETERS</div>", unsafe_allow_html=True)
-        st.caption("Unmeasurable internal engine state parameters estimated live by the thermodynamic observer.")
-
         fmep_val = round(0.45 + (current_row['rpm'] / 6000.0) * 0.35 + (5.0 - current_row['oil_press_actual']) * 0.18, 2)
         blowby_pct = round(min(18.5, max(1.2, (current_row['cht_actual'] - 105.0) * 0.28)), 1)
 
         deg_data = [
-            {"Parameter": "Friction MEP (FMEP)", "Estimated Value": f"{fmep_val} bar", "Nominal": "0.45 bar", "Drift Status": "HIGH FRICTION" if fmep_val > 0.8 else "NOMINAL"},
-            {"Parameter": "Piston Ring Blow-By", "Estimated Value": f"{blowby_pct}%", "Nominal": "< 2.5%", "Drift Status": "SEAL BREAKDOWN" if blowby_pct > 6.0 else "NOMINAL"},
-            {"Parameter": "Heat Dissipation Rate", "Estimated Value": f"{round(max(0.4, 1.0 - (current_row['cht_actual']-110)*0.015), 2)} ε", "Nominal": "1.00 ε", "Drift Status": "DEGRADED" if current_row['cht_actual'] > 125 else "NOMINAL"}
+            {"Parameter": "Friction MEP", "Estimated Value": f"{fmep_val} bar", "Nominal": "0.45 bar", "Drift Status": "HIGH" if fmep_val > 0.8 else "NOMINAL"},
+            {"Parameter": "Ring Blow-By", "Estimated Value": f"{blowby_pct}%", "Nominal": "< 2.5%", "Drift Status": "BREAKDOWN" if blowby_pct > 6.0 else "NOMINAL"},
+            {"Parameter": "Thermal Dissipation", "Estimated Value": f"{round(max(0.4, 1.0 - (current_row['cht_actual']-110)*0.015), 2)} ε", "Nominal": "1.00 ε", "Drift Status": "DEGRADED" if current_row['cht_actual'] > 125 else "NOMINAL"}
         ]
         st.dataframe(pd.DataFrame(deg_data), use_container_width=True)
 
@@ -970,14 +995,14 @@ with tab6:
     for c in cyl_coords:
         fig_3d.add_trace(go.Scatter3d(
             x=[c["x"]], y=[c["y"]], z=[c["z"]], mode="markers+text",
-            marker=dict(size=28, color=cyl_col, symbol="square", opacity=0.9),
+            marker=dict(size=26 if not is_mobile else 20, color=cyl_col, symbol="square", opacity=0.9),
             text=[f"<b>{c['name']}</b><br>{c['temp']}°C"], textposition="top center", name=c["name"]
         ))
-    fig_3d.add_trace(go.Scatter3d(x=[0], y=[-1.6], z=[1.1], mode="markers+text", marker=dict(size=22, color=active_theme['secondary'], symbol="diamond"), text=[f"<b>TURBOCHARGER</b><br>{current_row['map_inhg']} inHg"], textposition="top center", name="Turbo"))
-    fig_3d.add_trace(go.Scatter3d(x=[0], y=[0], z=[-0.9], mode="markers+text", marker=dict(size=24, color=oil_col, symbol="circle"), text=[f"<b>OIL SUMP</b><br>{oil_p} bar"], textposition="bottom center", name="Oil Gallery"))
+    fig_3d.add_trace(go.Scatter3d(x=[0], y=[-1.6], z=[1.1], mode="markers+text", marker=dict(size=20, color=active_theme['secondary'], symbol="diamond"), text=[f"<b>TURBO</b><br>{current_row['map_inhg']} inHg"], textposition="top center", name="Turbo"))
+    fig_3d.add_trace(go.Scatter3d(x=[0], y=[0], z=[-0.9], mode="markers+text", marker=dict(size=22, color=oil_col, symbol="circle"), text=[f"<b>OIL SUMP</b><br>{oil_p} bar"], textposition="bottom center", name="Oil Gallery"))
 
     fig_3d.update_layout(
-        paper_bgcolor='rgba(4, 9, 20, 0.85)', height=480,
+        paper_bgcolor='rgba(4, 9, 20, 0.85)', height=core_3d_h,
         scene=dict(
             xaxis=dict(showgrid=True, gridcolor='rgba(255, 255, 255, 0.1)', backgroundcolor='rgba(0,0,0,0)', range=[-2, 2]),
             yaxis=dict(showgrid=True, gridcolor='rgba(255, 255, 255, 0.1)', backgroundcolor='rgba(0,0,0,0)', range=[-2.5, 2.5]),
@@ -990,8 +1015,6 @@ with tab6:
 
 with tab7:
     st.markdown(f"<div style='color: {active_theme['primary']}; font-weight: bold;'>TACTICAL MULTI-BASE RADAR & AUTONOMOUS SAM THREAT AVOIDANCE</div>", unsafe_allow_html=True)
-    st.caption("Live reachability assessment across recovery runways. Jettisoning external stores expands unpowered glide radius.")
-
     uav_x = [0, 8, 16, 25, 32, 38, 42, 40, 32, 22, 12, 5, 0]
     uav_y = [0, 6, 12, 18, 22, 22, 15, 6, -2, -6, -4, -1, 0]
     norm_idx = int((t_idx / max(1, len(df))) * (len(uav_x) - 1))
@@ -1003,13 +1026,12 @@ with tab7:
     glide_limit_km = (current_row['altitude_m'] / 1000.0) * ld_ratio
 
     bases = [
-        {"name": "FOB Alpha [HOME]", "x": 0, "y": 0, "color": "#00ff66"},
-        {"name": "FOB Bravo [FWD STRIP]", "x": 30, "y": 8, "color": "#38bdf8"},
-        {"name": "Highway Strip Charlie", "x": 20, "y": 28, "color": "#f59e0b"}
+        {"name": "FOB Alpha", "x": 0, "y": 0, "color": "#00ff66"},
+        {"name": "FOB Bravo", "x": 30, "y": 8, "color": "#38bdf8"},
+        {"name": "Strip Charlie", "x": 20, "y": 28, "color": "#f59e0b"}
     ]
 
     fig_radar = go.Figure()
-
     for r in [15, 30, 48]:
         fig_radar.add_shape(type="circle", x0=-r, y0=-r, x1=r, y1=r, line=dict(color="rgba(255, 255, 255, 0.1)", dash="dot", width=1))
 
@@ -1022,7 +1044,7 @@ with tab7:
     fig_radar.add_trace(go.Scatter(
         x=[sam_x], y=[sam_y], mode="markers+text",
         marker=dict(size=14, color="#ff003c", symbol="x"),
-        text=["<b>[SAM-6 ENEMY RADAR]</b>"], textposition="top center", name="SAM Threat"
+        text=["<b>[SAM-6 THREAT]</b>"], textposition="top center", name="SAM Threat"
     ))
 
     fig_radar.add_trace(go.Scatter(x=uav_x[:norm_idx+1], y=uav_y[:norm_idx+1], mode="lines+markers", line=dict(color=active_theme['primary'], width=2.5), name="Patrol Route"))
@@ -1034,14 +1056,14 @@ with tab7:
         color = b["color"] if reachable else "#64748b"
         fig_radar.add_trace(go.Scatter(
             x=[b["x"]], y=[b["y"]], mode="markers+text",
-            marker=dict(size=14, color=color, symbol="triangle-up"),
+            marker=dict(size=13, color=color, symbol="triangle-up"),
             text=[f"<b>{b['name']}</b><br>{dist:.1f}km ({status_lbl})"],
             textposition="bottom center", name=b["name"]
         ))
 
     fig_radar.add_trace(go.Scatter(
         x=[cur_x], y=[cur_y], mode="markers+text",
-        marker=dict(size=16, color="#ff0055" if metrics["severity"] == "RED" else "#00ff66", symbol="diamond"),
+        marker=dict(size=15, color="#ff0055" if metrics["severity"] == "RED" else "#00ff66", symbol="diamond"),
         text=[f"<b>UAV-01 (T+{current_row['timestamp']:.0f}s)</b>"], textposition="top right", name="UAV-01"
     ))
 
@@ -1052,23 +1074,21 @@ with tab7:
             x=[cur_x, dogleg_wp_x, 0], y=[cur_y, dogleg_wp_y, 0],
             mode="lines+markers+text", line=dict(color="#ff003c", width=3.5, dash="dashdot"),
             marker=dict(size=8, color="#ff003c"),
-            text=["", "<b>WP-DOGLEG [SAM BYPASS]</b>", "<b>FOB ALPHA TOUCHDOWN</b>"],
+            text=["", "<b>WP-DOGLEG [BYPASS]</b>", "<b>FOB ALPHA</b>"],
             textposition="top right", name="Avoidance Vector"
         ))
 
-    fig_radar.update_layout(hud_plot_layout, height=460, xaxis=dict(range=[-35, 55], title="Range X (km)"), yaxis=dict(range=[-25, 45], title="Range Y (km)"))
+    fig_radar.update_layout(hud_plot_layout, height=radar_h, xaxis=dict(range=[-35, 55], title="Range X (km)"), yaxis=dict(range=[-25, 45], title="Range Y (km)"))
     st.plotly_chart(fig_radar, use_container_width=True)
 
 with tab8:
-    col_rep1, col_rep2 = st.columns([3, 2])
+    col_rep1, col_rep2 = st.columns([3, 2] if not is_mobile else [1, 1])
     with col_rep1:
         st.markdown(f"<div style='color: {active_theme['primary']}; font-weight: bold;'>MIL-STD-1553B AVIONICS D-BUS PROTOCOL ANALYZER</div>", unsafe_allow_html=True)
-        st.caption("Decoded military standard serial bus architecture for Remote Terminal 04 (Rotax Engine FADEC).")
-
         bus_frames = [
-            f"[1553B BC->RT04] CMD WORD: 0x2084 | Transmit Command | Sub-Address 04 | Word Count: 16 | Parity: ODD (OK)",
-            f"[1553B RT04->BC] STATUS WORD: 0x2000 | Remote Terminal Healthy | Service Request: NONE | Busy: 0",
-            f"[1553B DATA 01-04] RPM: {int(current_row['rpm']):04X} | CHT: {int(current_row['cht_actual']*10):04X} | OIL_P: {int(current_row['oil_press_actual']*100):04X} | EGT: {int(current_row['egt_actual']):04X}",
+            f"[1553B BC->RT04] CMD WORD: 0x2084 | Transmit | RT-04 | Sub-Address 04 | Words: 16 | Parity: OK",
+            f"[1553B RT04->BC] STATUS WORD: 0x2000 | RT-04 FADEC Healthy | Service Request: NONE",
+            f"[1553B DATA 01-04] RPM: {int(current_row['rpm']):04X} | CHT: {int(current_row['cht_actual']*10):04X} | OIL: {int(current_row['oil_press_actual']*100):04X} | EGT: {int(current_row['egt_actual']):04X}",
             f"[1553B DATA 05-08] MAP: {int(current_row['map_inhg']*100):04X} | ALT: {int(current_row['altitude_m']):04X} | VIB: {int(current_row['vibration_rms']*100):04X} | CRC: 0x9B7A"
         ]
         bus_html = "<br>".join([f"&gt; {item}" for item in bus_frames])
