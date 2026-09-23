@@ -1,6 +1,10 @@
 import os
 import sys
 import time
+import json
+import socket
+import random
+import threading
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
 import plotly.graph_objects as go  # type: ignore
@@ -20,7 +24,100 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Military HUD Stylesheet
+# Background UAV Transmitter Daemon
+class EmbeddedUAVTransmitter:
+    _instance = None
+
+    def __init__(self):
+        self.thread = None
+        self.stop_event = threading.Event()
+        self.is_running = False
+        self.packet_counter = 0
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = EmbeddedUAVTransmitter()
+        return cls._instance
+
+    def start(self):
+        if self.is_running:
+            return
+        self.stop_event.clear()
+        self.thread = threading.Thread(target=self._run_loop, daemon=True)
+        self.thread.start()
+        self.is_running = True
+
+    def stop(self):
+        if not self.is_running:
+            return
+        self.stop_event.set()
+        self.is_running = False
+
+    def _run_loop(self):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        met = 0
+        altitude = 1200.0
+        rpm = 5000.0
+        cht = 112.0
+        oil_p = 4.2
+
+        while not self.stop_event.is_set():
+            met += 1
+            self.packet_counter += 1
+
+            if met < 40:
+                phase = "CLIMB"
+                altitude += 20
+                rpm = 5300 + random.uniform(-15, 15)
+            elif met < 140:
+                phase = "CRUISE"
+                rpm = 4950 + random.uniform(-10, 10)
+            else:
+                phase = "DESCENT"
+                altitude = max(200, altitude - 12)
+                rpm = 4400 + random.uniform(-20, 20)
+
+            cht_model = 110.0 + (rpm - 4800) * 0.02
+            oil_model = 4.2 - (rpm - 4800) * 0.0003
+
+            # Fault Injection after 60s
+            if met > 60:
+                cht += random.uniform(0.35, 0.75)
+                oil_p = max(1.1, oil_p - random.uniform(0.015, 0.035))
+                vibe = 1.2 + random.uniform(0.4, 0.8)
+            else:
+                cht = cht_model + random.uniform(-0.4, 0.4)
+                oil_p = oil_model + random.uniform(-0.04, 0.04)
+                vibe = 1.05 + random.uniform(-0.04, 0.04)
+
+            payload = {
+                "timestamp": met,
+                "rpm": round(rpm, 1),
+                "cht_actual": round(cht, 2),
+                "cht_physics": round(cht_model, 2),
+                "oil_press_actual": round(oil_p, 2),
+                "oil_press_physics": round(oil_model, 2),
+                "egt_actual": round(810.0 + random.uniform(-4, 4), 1),
+                "egt_physics": 810.0,
+                "map_inhg": round(32.5 + random.uniform(-0.3, 0.3), 2),
+                "vibration_rms": round(vibe, 2),
+                "altitude_m": round(altitude, 1),
+                "fuel_flow": round(24.5 + (rpm - 4800) * 0.008, 2),
+                "flight_phase": phase
+            }
+
+            try:
+                packet_bytes = json.dumps(payload).encode('utf-8')
+                sock.sendto(packet_bytes, ("127.0.0.1", 14550))
+            except Exception:
+                pass
+
+            time.sleep(0.5)
+
+        sock.close()
+
+# Military Tactical HUD Stylesheet
 st.markdown("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -127,25 +224,45 @@ if "live_history" not in st.session_state:
 if "telemetry_bridge" not in st.session_state:
     st.session_state.telemetry_bridge = DroneTelemetryBridge()
 
-# Sidebar: Tactical Datalink Configuration
+transmitter_daemon = EmbeddedUAVTransmitter.get_instance()
+
+# Sidebar: Datalink Configuration
 st.sidebar.markdown("""
 <div style='text-align: center; padding: 5px 0;'>
     <div style='font-family: Orbitron; font-size: 1.15rem; color: #00f0ff; letter-spacing: 2px;'>AEROTWIN TACTICAL</div>
-    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE TELEMETRY NODE // 8.0.0-PRO</div>
+    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE TELEMETRY NODE // 9.0.0-PRO</div>
 </div>
 """, unsafe_allow_html=True)
 
 st.sidebar.markdown("---")
 source_mode = st.sidebar.radio(
     "TELEMETRY INGESTION MODE",
-    ["MISSION REPLAY (SYNTHETIC)", "🔴 LIVE HARDWARE UDP LINK (PORT 14550)"]
+    ["🔴 LIVE HARDWARE UDP LINK (PORT 14550)", "MISSION REPLAY (SYNTHETIC)"]
 )
 
 prognostics = EnginePrognostics()
 
 if source_mode == "🔴 LIVE HARDWARE UDP LINK (PORT 14550)":
-    st.sidebar.success("● LISTENING ON UDP://0.0.0.0:14550")
-    st.sidebar.caption("Accepting MAVLink/CAN serialized frames from external UAV companion computers.")
+    st.sidebar.markdown("<div style='font-family: Orbitron; font-size: 0.8rem; color: #00ff66;'>ONBOARD UAV TRANSMITTER</div>", unsafe_allow_html=True)
+    
+    col_tx1, col_tx2 = st.sidebar.columns(2)
+    if not transmitter_daemon.is_running:
+        if col_tx1.button("🚀 START DRONE"):
+            transmitter_daemon.start()
+            st.rerun()
+    else:
+        if col_tx1.button("🛑 STOP DRONE"):
+            transmitter_daemon.stop()
+            st.rerun()
+
+    if col_tx2.button("🧹 CLEAR BUFFER"):
+        st.session_state.live_history = []
+        st.rerun()
+
+    if transmitter_daemon.is_running:
+        st.sidebar.success(f"● PHYSICAL DAEMON ACTIVE\n[TX Frames: {transmitter_daemon.packet_counter}]")
+    else:
+        st.sidebar.warning("○ DRONE OFF (STANDBY)")
 
     bridge = st.session_state.telemetry_bridge
     packet = bridge.receive_latest_frame()
@@ -156,7 +273,6 @@ if source_mode == "🔴 LIVE HARDWARE UDP LINK (PORT 14550)":
             st.session_state.live_history.pop(0)
 
     if len(st.session_state.live_history) == 0:
-        # Fallback dummy frame until real packet arrives
         df = pd.DataFrame([{
             "timestamp": 0, "rpm": 5000, "cht_actual": 110.0, "cht_physics": 110.0,
             "oil_press_actual": 4.2, "oil_press_physics": 4.2, "egt_actual": 810.0,
@@ -231,7 +347,7 @@ if st.session_state.limp_mode or st.session_state.fuel_enrich:
 
 # Header Strip
 st.markdown("<div class='hud-header'>⚡ AEROTWIN: MALE UAV PROPULSION TWIN</div>", unsafe_allow_html=True)
-link_label = "🔴 LIVE UDP DATALINK (50Hz)" if source_mode != "MISSION REPLAY (SYNTHETIC)" else "● ENCRYPTED REPLAY STREAM"
+link_label = f"🔴 UDP LIVE BUS (FRAMES: {len(df)})" if source_mode != "MISSION REPLAY (SYNTHETIC)" else "● ENCRYPTED REPLAY STREAM"
 
 st.markdown(f"""
 <div class='telemetry-strip'>
@@ -307,7 +423,7 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
-# Pilot Action Station
+# Pilot Mitigation Action Station
 st.markdown("<div style='font-family: Orbitron; font-size: 0.95rem; color: #00f0ff; margin-bottom: 8px;'>🕹️ TACTICAL PILOT MITIGATION & COUNTERMEASURES</div>", unsafe_allow_html=True)
 c_mit1, c_mit2, c_mit3 = st.columns(3)
 with c_mit1:
@@ -557,11 +673,11 @@ with tab6:
             mime="text/csv"
         )
 
-# Loop Execution Handler
-if source_mode == "🔴 LIVE HARDWARE UDP LINK (PORT 14550)":
+# Execution Flow Loop
+if source_mode == "🔴 LIVE HARDWARE UDP LINK (PORT 14550)" and transmitter_daemon.is_running:
     time.sleep(0.5)
     st.rerun()
-elif st.session_state.is_playing:
+elif source_mode == "MISSION REPLAY (SYNTHETIC)" and st.session_state.is_playing:
     if st.session_state.t_idx < len(df) - 1:
         time.sleep(0.35)
         st.session_state.t_idx += 1
