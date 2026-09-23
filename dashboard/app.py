@@ -334,7 +334,7 @@ if not st.session_state.boot_complete:
     st.markdown(f"""
     <div style='max-width: 900px; margin: 15px auto; text-align: center;'>
         <div style='font-family: Orbitron; font-size: clamp(1.2rem, 2.2vw, 1.7rem); color: {active_theme['primary']}; font-weight: 900; letter-spacing: 2px; margin-bottom: 4px;'>
-            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v29.0
+            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v30.0
         </div>
         <div style='font-size: 0.78rem; color: #64748b; margin-bottom: 10px;'>
             TACTICAL PROPULSION DIGITAL TWIN GROUND STATION // MALE UAV FLEET
@@ -362,7 +362,7 @@ if not st.session_state.boot_complete:
 st.sidebar.markdown(f"""
 <div style='text-align: center; padding: 6px 0;'>
     <div style='font-family: Orbitron; font-size: 1.15rem; color: {active_theme['primary']}; letter-spacing: 2px;'>AEROTWIN TACTICAL</div>
-    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 29.0.0-PRO</div>
+    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 30.0.0-PRO</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -607,31 +607,85 @@ pitch = float(current_row['pitch_deg'])
 cur_spd = 115 if not st.session_state.limp_mode else 92
 cur_alt = int(current_row['altitude_m'])
 
-if not is_mobile:
-    pfd_col, g1, g2, g3, g4 = st.columns([1.35, 1, 1, 1, 1])
-    with pfd_col:
-        st.plotly_chart(make_pfd_figure(pitch, cur_spd, cur_alt, height=170), use_container_width=True, config={'displayModeBar': False})
-    with g1:
-        st.plotly_chart(make_hud_gauge("HEALTH INDEX", metrics['health_index'], 0, 100, "%", 45, 75, is_invert=True), use_container_width=True, config={'displayModeBar': False})
-    with g2:
-        st.plotly_chart(make_hud_gauge("CYLINDER TEMP", current_row['cht_actual'], 80, 170, "°C", 145, 130), use_container_width=True, config={'displayModeBar': False})
-    with g3:
-        st.plotly_chart(make_hud_gauge("OIL PRESSURE", current_row['oil_press_actual'], 0, 6, "bar", 1.8, 2.5, is_invert=True), use_container_width=True, config={'displayModeBar': False})
-    with g4:
-        st.plotly_chart(make_hud_gauge("CRANKSHAFT", current_row['rpm'], 0, 6000, "RPM", 5600, 5200), use_container_width=True, config={'displayModeBar': False})
-else:
-    st.plotly_chart(make_pfd_figure(pitch, cur_spd, cur_alt, height=150), use_container_width=True, config={'displayModeBar': False})
-    mob_row1_col1, mob_row1_col2 = st.columns(2)
-    with mob_row1_col1:
-        st.plotly_chart(make_hud_gauge("HEALTH INDEX", metrics['health_index'], 0, 100, "%", 45, 75, is_invert=True, height=150), use_container_width=True, config={'displayModeBar': False})
-    with mob_row1_col2:
-        st.plotly_chart(make_hud_gauge("CYLINDER TEMP", current_row['cht_actual'], 80, 170, "°C", 145, 130, height=150), use_container_width=True, config={'displayModeBar': False})
+# NEW: Live 3D Pre-Flight Test Flight Window Integration in Main GCS Dashboard
+col_pfd_main, col_3d_test_flight = st.columns([1.3, 1.2])
 
-    mob_row2_col1, mob_row2_col2 = st.columns(2)
-    with mob_row2_col1:
-        st.plotly_chart(make_hud_gauge("OIL PRESSURE", current_row['oil_press_actual'], 0, 6, "bar", 1.8, 2.5, is_invert=True, height=150), use_container_width=True, config={'displayModeBar': False})
-    with mob_row2_col2:
-        st.plotly_chart(make_hud_gauge("CRANKSHAFT", current_row['rpm'], 0, 6000, "RPM", 5600, 5200, height=150), use_container_width=True, config={'displayModeBar': False})
+with col_pfd_main:
+    if not is_mobile:
+        st.plotly_chart(make_pfd_figure(pitch, cur_spd, cur_alt, height=170), use_container_width=True, config={'displayModeBar': False})
+    else:
+        st.plotly_chart(make_pfd_figure(pitch, cur_spd, cur_alt, height=150), use_container_width=True, config={'displayModeBar': False})
+
+with col_3d_test_flight:
+    # Embedded 3D Test Flight Window (Real-time Pre-Flight Airspace Simulator)
+    components.html("""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body { margin: 0; overflow: hidden; background: #040914; font-family: 'Share Tech Mono', monospace; }
+            #test-hud {
+                position: absolute; top: 6px; left: 10px; color: #00ff66;
+                font-size: 10px; letter-spacing: 1px; pointer-events: none; z-index: 10;
+            }
+            #canvas-test { width: 100%; height: 170px; border-radius: 4px; border: 1px solid rgba(0, 240, 255, 0.35); }
+        </style>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    </head>
+    <body>
+        <div id="test-hud">&gt; PRE-FLIGHT TEST AIRSPACE [ACTIVE 3D]</div>
+        <div id="canvas-test"></div>
+        <script>
+            const wrap = document.getElementById('canvas-test');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(45, wrap.clientWidth / wrap.clientHeight, 0.1, 500);
+            camera.position.set(0, 8, 22);
+            camera.lookAt(0, 0, 0);
+
+            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+            wrap.appendChild(renderer.domElement);
+
+            const testDrone = new THREE.Group();
+            scene.add(testDrone);
+
+            const mWire = new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true });
+            testDrone.add(new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.3, 12, 10).rotateX(Math.PI/2), mWire));
+            const w = new THREE.Mesh(new THREE.BoxGeometry(12, 0.15, 2), mWire); w.position.z = 0.2; testDrone.add(w);
+
+            // Terrain grid
+            const grid = new THREE.GridHelper(40, 20, 0x00f0ff, 0x1e293b);
+            grid.position.y = -4;
+            scene.add(grid);
+
+            let t = 0;
+            function runTestFlight() {
+                requestAnimationFrame(runTestFlight);
+                t += 0.03;
+                testDrone.position.x = Math.sin(t) * 6;
+                testDrone.position.z = Math.cos(t * 0.7) * 4;
+                testDrone.position.y = Math.sin(t * 2) * 1.5;
+                testDrone.rotation.z = Math.cos(t) * 0.25;
+                testDrone.rotation.y = t;
+                renderer.render(scene, camera);
+            }
+            runTestFlight();
+        </script>
+    </body>
+    </html>
+    """, height=180)
+
+# Gauges Strip
+g1, g2, g3, g4 = st.columns(4)
+with g1:
+    st.plotly_chart(make_hud_gauge("HEALTH INDEX", metrics['health_index'], 0, 100, "%", 45, 75, is_invert=True, height=155), use_container_width=True, config={'displayModeBar': False})
+with g2:
+    st.plotly_chart(make_hud_gauge("CYLINDER TEMP", current_row['cht_actual'], 80, 170, "°C", 145, 130, height=155), use_container_width=True, config={'displayModeBar': False})
+with g3:
+    st.plotly_chart(make_hud_gauge("OIL PRESSURE", current_row['oil_press_actual'], 0, 6, "bar", 1.8, 2.5, is_invert=True, height=155), use_container_width=True, config={'displayModeBar': False})
+with g4:
+    st.plotly_chart(make_hud_gauge("CRANKSHAFT", current_row['rpm'], 0, 6000, "RPM", 5600, 5200, height=155), use_container_width=True, config={'displayModeBar': False})
 
 if spoofed_flag:
     st.markdown("""
