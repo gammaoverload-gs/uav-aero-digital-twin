@@ -149,7 +149,6 @@ if "telemetry_bridge" not in st.session_state:
 
 transmitter_daemon = EmbeddedUAVTransmitter.get_instance()
 
-# Theme Color Palettes
 THEMES = {
     "CYBER CYAN (DEFENSE)": {
         "primary": "#00f0ff", "secondary": "#38bdf8", "accent": "#00ff66",
@@ -171,11 +170,10 @@ THEMES = {
 active_theme = THEMES[st.session_state.hud_theme]
 is_mobile = (st.session_state.viewport_mode == "📱 MOBILE TACTICAL")
 
-# High-Tech Responsive Stylesheet
 st.markdown(f"""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com">
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Share+Tech+Mono&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 
 <style>
     @keyframes ambientBreathe {{
@@ -211,7 +209,6 @@ st.markdown(f"""
     .telemetry-strip {{
         background: rgba(8, 16, 32, 0.82);
         backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
         border: 1px solid {active_theme['border']};
         border-left: 5px solid {active_theme['primary']};
         padding: 8px 14px;
@@ -226,10 +223,7 @@ st.markdown(f"""
         margin-bottom: 12px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.65);
     }}
-    .telemetry-val {{
-        color: #ffffff;
-        font-weight: bold;
-    }}
+    .telemetry-val {{ color: #ffffff; font-weight: bold; }}
 
     .annunciator-box {{
         padding: 5px 12px;
@@ -243,15 +237,13 @@ st.markdown(f"""
         gap: 6px;
     }}
     .annunciator-warn {{
-        background: #dc2626;
-        color: #ffffff;
+        background: #dc2626; color: #ffffff;
         box-shadow: 0 0 22px rgba(220, 38, 38, 0.85);
         animation: blinkWarn 0.8s infinite alternate;
     }}
     .annunciator-nominal {{
         background: rgba(16, 185, 129, 0.2);
-        border: 1px solid #10b981;
-        color: #34d399;
+        border: 1px solid #10b981; color: #34d399;
     }}
 
     .stTabs [data-baseweb="tab-list"] {{
@@ -264,7 +256,6 @@ st.markdown(f"""
         margin-bottom: 14px;
         overflow-x: auto !important;
         white-space: nowrap !important;
-        -webkit-overflow-scrolling: touch !important;
     }}
     .stTabs [data-baseweb="tab"] {{
         font-family: 'Orbitron', sans-serif !important;
@@ -304,7 +295,6 @@ st.markdown(f"""
     .quick-dock {{
         background: rgba(8, 16, 32, 0.85);
         backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
         border: 1px solid {active_theme['border']};
         border-radius: 6px;
         padding: 12px;
@@ -335,15 +325,12 @@ st.markdown(f"""
         line-height: 1.75;
     }}
 
-    @keyframes blinkWarn {{
-        from {{ opacity: 1; }}
-        to {{ opacity: 0.35; }}
-    }}
+    @keyframes blinkWarn {{ from {{ opacity: 1; }} to {{ opacity: 0.35; }} }}
 </style>
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 1. 3D HIGH-POLY COMBAT MALE UAV (THREE.JS PROCEDURAL REAPER)
+# 1. NEXT-GEN 3D MILITARY COMBAT UAV HOLOGRAPHIC SCANNER
 # -------------------------------------------------------------
 if not st.session_state.boot_complete:
     hex_color = f"#{active_theme['drone_hex']:06x}"
@@ -354,7 +341,7 @@ if not st.session_state.boot_complete:
     <head>
         <meta charset="utf-8">
         <style>
-            body {{ margin: 0; overflow: hidden; background: transparent; font-family: 'Share Tech Mono', 'Courier New', monospace; }}
+            body {{ margin: 0; overflow: hidden; background: transparent; font-family: 'Share Tech Mono', monospace; }}
             #hud-overlay {{
                 position: absolute; top: 12px; left: 16px; color: {hex_color};
                 font-size: 11px; letter-spacing: 1.5px; text-shadow: 0 0 10px {hex_color};
@@ -375,11 +362,11 @@ if not st.session_state.boot_complete:
     </head>
     <body>
         <div id="hud-overlay">
-            &gt; SYSTEM: AEROTWIN DEFENSE OS [LIVE RENDER]<br>
-            &gt; AIRFRAME: MALE UAV STEALTH COMBAT CORE [MQ-9 / TAPAS SPEC]<br>
-            &gt; AVIONICS BUS: MIL-STD-1553B / STANAG 4586 ACTIVE<br>
-            &gt; PROPULSION: ROTAX 915iS TURBOCHARGED DIGITAL TWIN<br>
-            &gt; ROTATE: DRAG MOUSE / TOUCH TO INSPECT 3D AIRFRAME
+            &gt; SYSTEM: AEROTWIN COMBAT GCS [3D HULL CAD]<br>
+            &gt; AIRFRAME: MALE STEALTH PLATFORM [MQ-9 / TAPAS CLASS]<br>
+            &gt; WINGSPAN: 20.1M | AVIONICS: MIL-STD-1553B / STANAG 4586<br>
+            &gt; PROPULSION: ROTAX 915iS DIGITAL TWIN TURBOCHARGED<br>
+            &gt; INTERACTION: DRAG / TOUCH TO INSPECT AERODYNAMIC AIRFRAME
         </div>
         <div id="target-reticle"></div>
         <div id="canvas-container"></div>
@@ -388,7 +375,7 @@ if not st.session_state.boot_complete:
             const container = document.getElementById('canvas-container');
             const scene = new THREE.Scene();
             const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 14, 38);
+            camera.position.set(0, 15, 38);
             camera.lookAt(0, 0, 0);
 
             const renderer = new THREE.WebGLRenderer({{ alpha: true, antialias: true }});
@@ -399,177 +386,200 @@ if not st.session_state.boot_complete:
             const droneGroup = new THREE.Group();
             scene.add(droneGroup);
 
-            // Lighting
-            const ambLight = new THREE.AmbientLight(0xffffff, 0.7);
+            // Studio Lighting
+            const ambLight = new THREE.AmbientLight(0xffffff, 0.85);
             scene.add(ambLight);
-            const dirLight = new THREE.DirectionalLight({active_theme['drone_hex']}, 1.5);
-            dirLight.position.set(10, 25, 20);
+            const dirLight = new THREE.DirectionalLight({active_theme['drone_hex']}, 1.8);
+            dirLight.position.set(12, 28, 20);
             scene.add(dirLight);
 
-            // Materials: Tactical Dark Hull + Glowing Wireframe Cage
+            // Shaders / Materials: Dark Matte Carbon Skin + Vibrant Wireframe Cage
             const wireMat = new THREE.MeshBasicMaterial({{
                 color: {active_theme['drone_hex']},
                 wireframe: true,
                 transparent: true,
-                opacity: 0.85
+                opacity: 0.95
             }});
 
-            const solidMat = new THREE.MeshStandardMaterial({{
+            const skinMat = new THREE.MeshStandardMaterial({{
                 color: 0x051322,
-                roughness: 0.3,
-                metalness: 0.8,
+                roughness: 0.35,
+                metalness: 0.85,
                 transparent: true,
-                opacity: 0.55
+                opacity: 0.65
             }});
 
-            function createCombatMesh(geo, addSolid = true) {{
-                const grp = new THREE.Group();
+            function createCombatPart(geo, hasSkin = true) {{
+                const group = new THREE.Group();
                 const wire = new THREE.Mesh(geo, wireMat);
-                grp.add(wire);
-                if (addSolid) {{
-                    const sol = new THREE.Mesh(geo, solidMat);
-                    grp.add(sol);
+                group.add(wire);
+                if (hasSkin) {{
+                    const skin = new THREE.Mesh(geo, skinMat);
+                    group.add(skin);
                 }}
-                return grp;
+                return group;
             }}
 
-            // 1. Sleek Fuselage with SATCOM Hump
-            // Mid Body
-            const bodyGeo = new THREE.CylinderGeometry(1.4, 0.5, 19, 16);
-            bodyGeo.rotateX(Math.PI / 2);
-            const body = createCombatMesh(bodyGeo);
-            droneGroup.add(body);
+            // 1. Aerodynamic Chined Fuselage (Extruded Contour)
+            const fuseShape = new THREE.Shape();
+            fuseShape.moveTo(0, 1.2);
+            fuseShape.bezierCurveTo(1.6, 1.1, 1.7, 0.0, 1.5, -0.7);
+            fuseShape.bezierCurveTo(1.0, -1.2, -1.0, -1.2, -1.5, -0.7);
+            fuseShape.bezierCurveTo(-1.7, 0.0, -1.6, 1.1, 0, 1.2);
 
-            // Nose Bulb with SATCOM Hump (True Reaper/Predator Shape)
-            const satcomGeo = new THREE.SphereGeometry(1.6, 16, 16);
-            satcomGeo.scale(0.9, 1.25, 2.2);
-            const satcomNose = createCombatMesh(satcomGeo);
-            satcomNose.position.set(0, 0.35, 7.8);
-            droneGroup.add(satcomNose);
+            const fuseExtrudeSettings = {{
+                steps: 20,
+                depth: 18,
+                bevelEnabled: true,
+                bevelThickness: 1.5,
+                bevelSize: 0.5,
+                bevelSegments: 6
+            }};
+            const fuseGeo = new THREE.ExtrudeGeometry(fuseShape, fuseExtrudeSettings);
+            fuseGeo.center();
+            fuseGeo.scale(0.85, 0.8, 1.0);
+            const fuselage = createCombatPart(fuseGeo);
+            droneGroup.add(fuselage);
 
-            // Top Dorsal Engine Air Intake Scoop (For Rotax 915 Turbo)
-            const scoopGeo = new THREE.BoxGeometry(1.1, 0.9, 3.5);
-            scoopGeo.rotateX(0.2);
-            const scoop = createCombatMesh(scoopGeo);
-            scoop.position.set(0, 1.4, -2.5);
+            // Nose SATCOM Radome (Integrated Stealth Hump)
+            const satcomGeo = new THREE.SphereGeometry(1.4, 18, 18);
+            satcomGeo.scale(0.95, 1.1, 2.6);
+            const satcom = createCombatPart(satcomGeo);
+            satcom.position.set(0, 0.35, 7.5);
+            droneGroup.add(satcom);
+
+            // Dorsal Engine Air Intake Scoop (Rotax Turbocharger Intercooler)
+            const scoopGeo = new THREE.CylinderGeometry(0.7, 0.9, 4.0, 12);
+            scoopGeo.rotateX(Math.PI / 2);
+            scoopGeo.scale(1.1, 0.6, 1.0);
+            const scoop = createCombatPart(scoopGeo);
+            scoop.position.set(0, 1.2, -2.6);
             droneGroup.add(scoop);
 
-            // 2. High-Aspect Ratio Swept Wings with Winglets
-            // Left Main Wing
-            const leftWingGeo = new THREE.BoxGeometry(16, 0.28, 2.6);
-            const leftWing = createCombatMesh(leftWingGeo);
-            leftWing.position.set(-8.8, 0.2, 0.4);
-            leftWing.rotation.y = 0.05;  // Slight sweep
-            leftWing.rotation.z = -0.03; // Dihedral
-            droneGroup.add(leftWing);
+            // 2. High-Aspect Ratio Aerodynamic Cambered Wings with Winglets
+            function createTaperedWing(isLeft = true) {{
+                const wingGroup = new THREE.Group();
+                const sign = isLeft ? -1 : 1;
 
-            // Left Winglet
-            const leftWingletGeo = new THREE.BoxGeometry(0.2, 1.8, 1.4);
-            const leftWinglet = createCombatMesh(leftWingletGeo);
-            leftWinglet.position.set(-16.8, 1.0, 0.1);
-            leftWinglet.rotation.z = -0.3;
-            droneGroup.add(leftWinglet);
+                // Wing Panel
+                const wingShape = new THREE.Shape();
+                wingShape.moveTo(0, 1.5);
+                wingShape.lineTo(16.5, 0.6);
+                wingShape.lineTo(16.5, -0.6);
+                wingShape.lineTo(0, -1.5);
+                wingShape.closePath();
 
-            // Right Main Wing
-            const rightWingGeo = new THREE.BoxGeometry(16, 0.28, 2.6);
-            const rightWing = createCombatMesh(rightWingGeo);
-            rightWing.position.set(8.8, 0.2, 0.4);
-            rightWing.rotation.y = -0.05;
-            rightWing.rotation.z = 0.03;
-            droneGroup.add(rightWing);
+                const wingGeo = new THREE.ExtrudeGeometry(wingShape, {{
+                    depth: 0.28, bevelEnabled: true, bevelThickness: 0.08, bevelSize: 0.08
+                }});
+                wingGeo.rotateX(Math.PI / 2);
+                const wingMesh = createCombatPart(wingGeo);
+                wingMesh.scale.x = sign;
+                wingMesh.position.set(sign * 1.2, 0.15, 0.2);
+                wingMesh.rotation.y = sign * 0.04;
+                wingMesh.rotation.z = -sign * 0.025; // Dihedral angle
+                wingGroup.add(wingMesh);
 
-            // Right Winglet
-            const rightWingletGeo = new THREE.BoxGeometry(0.2, 1.8, 1.4);
-            const rightWinglet = createCombatMesh(rightWingletGeo);
-            rightWinglet.position.set(16.8, 1.0, 0.1);
-            rightWinglet.rotation.z = 0.3;
-            droneGroup.add(rightWinglet);
+                // Blended Winglet
+                const wingletGeo = new THREE.BoxGeometry(0.18, 2.2, 1.2);
+                const winglet = createCombatPart(wingletGeo);
+                winglet.position.set(sign * 17.8, 1.1, 0.1);
+                winglet.rotation.z = -sign * 0.35;
+                wingGroup.add(winglet);
 
-            // 3. Underwing Weapon Pylons & Hardpoints (4 Pylons with Missiles)
-            for (let side of [-1, 1]) {{
-                for (let pos of [4.5, 9.5]) {{
-                    // Pylon
-                    const pylonGeo = new THREE.BoxGeometry(0.2, 0.6, 1.6);
-                    const pylon = createCombatMesh(pylonGeo);
-                    pylon.position.set(side * pos, -0.3, 0.3);
-                    droneGroup.add(pylon);
+                // Navigation LED Beacon
+                const beaconGeo = new THREE.SphereGeometry(0.2, 8, 8);
+                const beaconColor = isLeft ? 0xff0044 : 0x00ff66;
+                const beacon = new THREE.Mesh(beaconGeo, new THREE.MeshBasicMaterial({{ color: beaconColor }}));
+                beacon.position.set(sign * 18.0, 2.2, 0.1);
+                wingGroup.add(beacon);
 
-                    // AGM-114 Style Missile Pod
-                    const misGeo = new THREE.CylinderGeometry(0.22, 0.22, 2.8, 8);
+                // 2 Weapon Pylons per Wing
+                for (let pPos of [5.2, 10.5]) {{
+                    const pylonGeo = new THREE.BoxGeometry(0.18, 0.55, 1.8);
+                    const pylon = createCombatPart(pylonGeo);
+                    pylon.position.set(sign * pPos, -0.32, 0.2);
+                    wingGroup.add(pylon);
+
+                    // AGM-114 Hellfire Missiles
+                    const misGeo = new THREE.CylinderGeometry(0.2, 0.2, 3.0, 12);
                     misGeo.rotateX(Math.PI / 2);
-                    const missile = createCombatMesh(misGeo);
-                    missile.position.set(side * pos, -0.65, 0.3);
-                    droneGroup.add(missile);
+                    const mis = createCombatPart(misGeo);
+                    mis.position.set(sign * pPos, -0.7, 0.2);
+                    wingGroup.add(mis);
                 }}
+
+                return wingGroup;
             }}
 
-            // 4. Inverted V-Tail & Ventral Keel Fin (MQ-9 Reaper Spec)
-            const tailGeo = new THREE.BoxGeometry(0.25, 4.4, 1.5);
-            // Left Tail (V-Down)
-            const leftTail = createCombatMesh(tailGeo);
-            leftTail.position.set(-2.2, -1.2, -9.0);
+            droneGroup.add(createTaperedWing(true));
+            droneGroup.add(createTaperedWing(false));
+
+            // 3. Inverted V-Tail Empennage (Reaper/Predator Spec)
+            const tailGeo = new THREE.BoxGeometry(0.18, 4.6, 1.6);
+            
+            const leftTail = createCombatPart(tailGeo);
+            leftTail.position.set(-2.0, -1.2, -8.6);
             leftTail.rotation.z = 0.65;
-            leftTail.rotation.x = -0.25;
+            leftTail.rotation.x = -0.22;
             droneGroup.add(leftTail);
 
-            // Right Tail (V-Down)
-            const rightTail = createCombatMesh(tailGeo);
-            rightTail.position.set(2.2, -1.2, -9.0);
+            const rightTail = createCombatPart(tailGeo);
+            rightTail.position.set(2.0, -1.2, -8.6);
             rightTail.rotation.z = -0.65;
-            rightTail.rotation.x = -0.25;
+            rightTail.rotation.x = -0.22;
             droneGroup.add(rightTail);
 
-            // Ventral Keel Fin (Top Fin)
-            const topFinGeo = new THREE.BoxGeometry(0.22, 2.8, 1.8);
-            const topFin = createCombatMesh(topFinGeo);
-            topFin.position.set(0, 1.8, -8.8);
-            topFin.rotation.x = -0.3;
+            // Ventral Keel Fin (Top Rudder Stabilizer)
+            const topFinGeo = new THREE.BoxGeometry(0.18, 2.8, 1.8);
+            const topFin = createCombatPart(topFinGeo);
+            topFin.position.set(0, 1.8, -8.6);
+            topFin.rotation.x = -0.25;
             droneGroup.add(topFin);
 
-            // 5. 4-Blade Pusher Propeller with Center Spinner Cone
+            // 4. Rear Pusher Propeller Engine Assembly
             const propGroup = new THREE.Group();
-            propGroup.position.set(0, 0, -9.8);
+            propGroup.position.set(0, 0.1, -9.6);
             droneGroup.add(propGroup);
 
-            // Spinner Cone
-            const spinnerGeo = new THREE.ConeGeometry(0.55, 1.2, 12);
+            // Spinner Nose Cone
+            const spinnerGeo = new THREE.ConeGeometry(0.55, 1.3, 16);
             spinnerGeo.rotateX(-Math.PI / 2);
-            const spinner = createCombatMesh(spinnerGeo);
+            const spinner = createCombatPart(spinnerGeo);
             propGroup.add(spinner);
 
-            // 4 Blades
+            // 4 Carbon Propeller Blades
             const bladeMat = new THREE.MeshBasicMaterial({{ color: 0x00ff66 }});
             for (let i = 0; i < 4; i++) {{
-                const bladeGeo = new THREE.BoxGeometry(3.6, 0.35, 0.05);
+                const bladeGeo = new THREE.BoxGeometry(3.6, 0.32, 0.05);
                 const blade = new THREE.Mesh(bladeGeo, bladeMat);
                 blade.rotation.z = (Math.PI / 2) * i;
                 propGroup.add(blade);
             }}
 
-            // 6. Chin EO/IR FLIR Optical Gimbal Turret
-            const turretGeo = new THREE.SphereGeometry(0.85, 16, 16);
-            const turret = createCombatMesh(turretGeo);
-            turret.position.set(0, -1.2, 7.5);
+            // 5. Multispectral EO/IR FLIR Gimbal Turret (Nose Sensor Pod)
+            const turretGeo = new THREE.SphereGeometry(0.9, 18, 18);
+            const turret = createCombatPart(turretGeo);
+            turret.position.set(0, -1.15, 7.4);
             droneGroup.add(turret);
 
-            // Glowing Optical Lens
-            const lensGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.3, 12);
-            lensGeo.rotateX(Math.PI / 2);
-            const lensMat = new THREE.MeshBasicMaterial({{ color: {active_theme['laser_hex']} }});
-            const lens = new THREE.Mesh(lensGeo, lensMat);
-            lens.position.set(0, -1.2, 8.35);
-            droneGroup.add(lens);
+            // Laser Optics Aperture
+            const opticGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.3, 14);
+            opticGeo.rotateX(Math.PI / 2);
+            const opticLens = new THREE.Mesh(opticGeo, new THREE.MeshBasicMaterial({{ color: {active_theme['laser_hex']} }}));
+            opticLens.position.set(0, -1.15, 8.3);
+            droneGroup.add(opticLens);
 
-            // 7. Tactical Scanning Floor Grids & Azimuth Compass
+            // 6. Tactical Azimuth Compass & Range Rings
             const compassGeo = new THREE.RingGeometry(18, 18.25, 64);
             compassGeo.rotateX(Math.PI / 2);
             const compass = new THREE.Mesh(compassGeo, new THREE.MeshBasicMaterial({{
-                color: {active_theme['drone_hex']}, side: THREE.DoubleSide, transparent: true, opacity: 0.3
+                color: {active_theme['drone_hex']}, side: THREE.DoubleSide, transparent: true, opacity: 0.28
             }}));
             compass.position.y = -6.5;
             scene.add(compass);
 
-            // Crosshair tick lines
+            // Crosshair Ticks
             const tickGeo = new THREE.BufferGeometry().setFromPoints([
                 new THREE.Vector3(-22, -6.5, 0), new THREE.Vector3(22, -6.5, 0),
                 new THREE.Vector3(0, -6.5, -22), new THREE.Vector3(0, -6.5, 22)
@@ -579,7 +589,7 @@ if not st.session_state.boot_complete:
             }}));
             scene.add(ticks);
 
-            // 8. Dynamic Laser Scanning Plane
+            // 7. Dynamic Diagnostic Laser Sweep Plane
             const scanGeo = new THREE.PlaneGeometry(38, 1.4);
             scanGeo.rotateX(Math.PI / 2);
             const scanPlane = new THREE.Mesh(scanGeo, new THREE.MeshBasicMaterial({{
@@ -587,7 +597,7 @@ if not st.session_state.boot_complete:
             }}));
             scene.add(scanPlane);
 
-            // Interactive Mouse Navigation
+            // Mouse / Touch Gestures
             let isDragging = false;
             let prevX = 0, prevY = 0;
             let rotX = 0.15, rotY = 0;
@@ -602,7 +612,6 @@ if not st.session_state.boot_complete:
                 }}
             }});
 
-            // Touch events for mobile
             window.addEventListener('touchstart', (e) => {{
                 if (e.touches.length === 1) {{
                     isDragging = true; prevX = e.touches[0].clientX; prevY = e.touches[0].clientY;
@@ -623,7 +632,7 @@ if not st.session_state.boot_complete:
             function animate() {{
                 requestAnimationFrame(animate);
 
-                // Spin propeller
+                // High-speed propeller rotation
                 propGroup.rotation.z += 0.55;
 
                 // Laser scan sweep
@@ -633,14 +642,13 @@ if not st.session_state.boot_complete:
                 scanPlane.position.z = scanZ;
                 scanPlane.position.y = droneGroup.position.y;
 
-                // Slow ambient turn if not dragging
                 if (!isDragging) {{
                     rotY += 0.006;
                 }}
 
                 droneGroup.rotation.y = rotY;
                 droneGroup.rotation.x = rotX;
-                droneGroup.position.y = Math.sin(Date.now() * 0.002) * 0.45; // Hovering motion
+                droneGroup.position.y = Math.sin(Date.now() * 0.002) * 0.45;
 
                 compass.rotation.z += 0.002;
 
@@ -661,7 +669,7 @@ if not st.session_state.boot_complete:
     st.markdown(f"""
     <div style='background: rgba(4, 9, 20, 0.95); border: 1px solid {active_theme['primary']}; border-radius: 6px; padding: clamp(16px, 3vw, 30px); max-width: 820px; margin: 10px auto; box-shadow: 0 0 40px {active_theme['glow']};'>
         <div style='font-family: Orbitron; font-size: clamp(1.1rem, 2.2vw, 1.6rem); color: {active_theme['primary']}; font-weight: 900; letter-spacing: 2px;'>
-            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v19.0
+            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v20.0
         </div>
         <div style='font-size: 0.78rem; color: #64748b; margin-bottom: 14px;'>
             TACTICAL PROPULSION DIGITAL TWIN GROUND STATION // MALE UAV FLEET
@@ -694,7 +702,7 @@ if not st.session_state.boot_complete:
 st.sidebar.markdown(f"""
 <div style='text-align: center; padding: 6px 0;'>
     <div style='font-family: Orbitron; font-size: 1.15rem; color: {active_theme['primary']}; letter-spacing: 2px;'>AEROTWIN TACTICAL</div>
-    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 19.0.0-PRO</div>
+    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 20.0.0-PRO</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -944,7 +952,6 @@ pitch = float(current_row['pitch_deg'])
 cur_spd = 115 if not st.session_state.limp_mode else 92
 cur_alt = int(current_row['altitude_m'])
 
-# DYNAMIC RESPONSIVE LAYOUT (DESKTOP vs MOBILE)
 if not is_mobile:
     pfd_col, g1, g2, g3, g4 = st.columns([1.35, 1, 1, 1, 1])
     with pfd_col:
