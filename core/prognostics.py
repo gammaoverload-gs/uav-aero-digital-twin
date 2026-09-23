@@ -2,98 +2,71 @@ import numpy as np
 
 class EnginePrognostics:
     """
-    Evaluates real-time health index, residual anomalies against thermodynamic baseline,
-    and prognostic Remaining Useful Life (RUL) for MALE UAV aero piston engines.
+    Diagnostic anomaly detector and Remaining Useful Life (RUL) estimator.
     """
     def __init__(self):
-        # Critical Operational Redlines (Rotax 914/915 specifications)
-        self.CHT_REDLINE = 145.0       # Max continuous cylinder head temp (°C)
-        self.OIL_PRESS_MIN = 1.5       # Critical minimum oil pressure (bar)
-        self.VIBE_MAX = 2.8            # Critical vibration RMS limit (G)
-        self.EGT_REDLINE = 880.0       # Max exhaust gas temp (°C)
+        self.nominal_baseline = 100.0
 
     def evaluate_telemetry(self, row):
-        """
-        Calculates physics deviations, health degradation penalty, and RUL estimation.
-        """
-        # 1. Physics Residual Calculations
-        cht_residual = abs(row["cht_actual"] - row["cht_physics"])
-        egt_residual = abs(row["egt_actual"] - row["egt_physics"])
-        oil_p_residual = abs(row["oil_press_actual"] - row["oil_press_physics"])
-        oil_t_residual = abs(row["oil_temp_actual"] - row["oil_temp_physics"])
+        # Safe getter helper for Series or Dict
+        def get_val(key, default):
+            try:
+                if key in row and not np.isnan(row[key]):
+                    return float(row[key])
+            except Exception:
+                pass
+            return float(default)
 
-        # 2. Dynamic Degradation Penalty Computation
+        cht_actual = get_val("cht_actual", 110.0)
+        cht_physics = get_val("cht_physics", 110.0)
+        oil_p_actual = get_val("oil_press_actual", 4.2)
+        oil_p_physics = get_val("oil_press_physics", 4.2)
+        oil_t_actual = get_val("oil_temp_actual", 92.0)
+        oil_t_physics = get_val("oil_temp_physics", 90.0)
+        egt_actual = get_val("egt_actual", 810.0)
+        egt_physics = get_val("egt_physics", 810.0)
+        vibration = get_val("vibration_rms", 1.1)
+
+        cht_residual = round(abs(cht_actual - cht_physics), 2)
+        oil_p_residual = round(abs(oil_p_actual - oil_p_physics), 2)
+        oil_t_residual = round(abs(oil_t_actual - oil_t_physics), 2)
+        egt_residual = round(abs(egt_actual - egt_physics), 2)
+
+        # Health penalty computation
         penalty = 0.0
-        # CHT overheat penalty
-        if row["cht_actual"] > 120.0:
-            penalty += min(45.0, ((row["cht_actual"] - 120.0) / (self.CHT_REDLINE - 120.0)) * 45.0)
+        penalty += min(45.0, cht_residual * 1.8)
+        penalty += min(35.0, oil_p_residual * 16.0)
+        penalty += min(15.0, max(0.0, (vibration - 1.1) * 20.0))
 
-        # Oil pressure loss penalty
-        if row["oil_press_actual"] < 3.0:
-            penalty += min(45.0, ((3.0 - row["oil_press_actual"]) / (3.0 - self.OIL_PRESS_MIN)) * 45.0)
+        health_index = max(5.0, round(100.0 - penalty, 1))
 
-        # Vibration / Knock penalty
-        if row["vibration_rms"] > 1.4:
-            penalty += min(20.0, ((row["vibration_rms"] - 1.4) / (self.VIBE_MAX - 1.4)) * 20.0)
-
-        # Base health index score (0 to 100%)
-        health_index = max(5.0, min(100.0, 100.0 - penalty))
-
-        # 3. Fault Classification & Tactical Diagnostics
-        status = "NOMINAL"
-        alert_msg = "All propulsion parameters within thermodynamic tolerances."
-        severity_level = "GREEN"
-
-        if row["cht_actual"] >= self.CHT_REDLINE or row["vibration_rms"] >= self.VIBE_MAX:
-            status = "CRITICAL: THERMAL RUNAWAY & DETONATION"
-            alert_msg = "Severe cylinder overheating with knocking. Imminent piston seizure risk. Immediate RTB required."
-            severity_level = "RED"
-        elif row["oil_press_actual"] <= self.OIL_PRESS_MIN:
-            status = "CRITICAL: LUBRICATION FAILURE"
-            alert_msg = "Oil gallery pressure collapsed below 1.5 bar. Bearing wipe imminent. Throttle reduction mandatory."
-            severity_level = "RED"
-        elif health_index < 75.0:
-            status = "WARNING: PROGRESSIVE DEGRADATION"
-            alert_msg = "Anomalous physics residual drift detected. Subsystem efficiency degrading."
-            severity_level = "AMBER"
-
-        # 4. Dynamic Remaining Useful Life (RUL) in flight hours
-        if health_index > 85.0:
-            rul_hours = 120.0  # Routine service interval
-        elif severity_level == "RED":
-            # Emergency exponential decay of RUL
-            rul_hours = max(0.05, round((health_index / 100.0) * 1.8, 2))
+        # Prognostic RUL calculation (hours)
+        if health_index > 75:
+            rul_hours = round(max(3.5, 6.0 * (health_index / 100.0)), 2)
+            severity = "GREEN"
+            status = "PROPULSION NOMINAL"
+            alert_message = "All thermodynamic parameters within tolerance."
+        elif health_index > 45:
+            rul_hours = round(max(1.2, 3.5 * (health_index / 100.0)), 2)
+            severity = "AMBER"
+            status = "DEGRADED PROPULSION"
+            alert_message = "Thermal or lubrication drift detected. Monitor closely."
         else:
-            rul_hours = max(0.5, round((health_index / 100.0) * 14.5, 2))
+            rul_hours = round(max(0.25, 1.2 * (health_index / 100.0)), 2)
+            severity = "RED"
+            status = "CRITICAL: THERMAL RUNAWAY & DETONATION"
+            alert_message = "Severe cylinder overheating with knocking. Imminent piston seizure risk. Immediate RTB required."
 
         return {
-            "health_index": round(health_index, 1),
-            "status": status,
-            "severity": severity_level,
-            "alert_message": alert_msg,
+            "health_index": health_index,
             "rul_hours": rul_hours,
+            "severity": severity,
+            "status": status,
+            "alert_message": alert_message,
             "residuals": {
-                "cht_delta": round(cht_residual, 2),
-                "egt_delta": round(egt_residual, 2),
-                "oil_p_delta": round(oil_p_residual, 2),
-                "oil_t_delta": round(oil_t_residual, 2)
+                "cht_delta": cht_residual,
+                "oil_p_delta": oil_p_residual,
+                "oil_t_delta": oil_t_residual,
+                "egt_delta": egt_residual
             }
         }
-
-if __name__ == "__main__":
-    from engine_physics import AeroPistonDigitalTwin
-    
-    twin = AeroPistonDigitalTwin()
-    prognostics = EnginePrognostics()
-    
-    # Test on a degraded cycle
-    df = twin.generate_mission_telemetry(total_seconds=150, fault_scenario="COOLING_FAILURE")
-    final_point = df.iloc[-1]
-    result = prognostics.evaluate_telemetry(final_point)
-    
-    print("\n--- Digital Twin Prognostics Diagnostic ---")
-    print(f"Status:        {result['status']}")
-    print(f"Health Index:  {result['health_index']}%")
-    print(f"Remaining RUL: {result['rul_hours']} Flight Hours")
-    print(f"Alert:         {result['alert_message']}")
-    print(f"Residuals:     {result['residuals']}")
