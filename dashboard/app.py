@@ -19,7 +19,7 @@ from core.prognostics import EnginePrognostics  # type: ignore
 from core.telemetry_bridge import DroneTelemetryBridge  # type: ignore
 
 st.set_page_config(
-    page_title="AeroTwin Tactical GCS | Defense-Grade MALE UAV",
+    page_title="AeroTwin Tactical GCS | MALE UAV Digital Twin",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -121,7 +121,7 @@ class EmbeddedUAVTransmitter:
 
         sock.close()
 
-# Session State Initialization
+# State Initialization
 if "boot_complete" not in st.session_state:
     st.session_state.boot_complete = False
 if "viewport_mode" not in st.session_state:
@@ -153,15 +153,18 @@ transmitter_daemon = EmbeddedUAVTransmitter.get_instance()
 THEMES = {
     "CYBER CYAN (DEFENSE)": {
         "primary": "#00f0ff", "secondary": "#38bdf8", "accent": "#00ff66",
-        "bg_radial1": "#0c1b30", "bg_radial2": "#051329", "glow": "rgba(0, 240, 255, 0.35)", "border": "rgba(0, 240, 255, 0.3)"
+        "bg_radial1": "#0c1b30", "bg_radial2": "#051329", "glow": "rgba(0, 240, 255, 0.35)", "border": "rgba(0, 240, 255, 0.3)",
+        "drone_hex": 0x00f0ff, "laser_hex": 0x38bdf8
     },
     "NVG PHOSPHOR GREEN (530nm)": {
         "primary": "#00ff66", "secondary": "#4ade80", "accent": "#a7f3d0",
-        "bg_radial1": "#062412", "bg_radial2": "#021609", "glow": "rgba(0, 255, 102, 0.4)", "border": "rgba(0, 255, 102, 0.3)"
+        "bg_radial1": "#062412", "bg_radial2": "#021609", "glow": "rgba(0, 255, 102, 0.4)", "border": "rgba(0, 255, 102, 0.3)",
+        "drone_hex": 0x00ff66, "laser_hex": 0x4ade80
     },
     "FLIR COMBAT AMBER (THERMAL)": {
         "primary": "#f59e0b", "secondary": "#fbbf24", "accent": "#fde68a",
-        "bg_radial1": "#251203", "bg_radial2": "#1a0b02", "glow": "rgba(245, 158, 11, 0.4)", "border": "rgba(245, 158, 11, 0.3)"
+        "bg_radial1": "#251203", "bg_radial2": "#1a0b02", "glow": "rgba(245, 158, 11, 0.4)", "border": "rgba(245, 158, 11, 0.3)",
+        "drone_hex": 0xf59e0b, "laser_hex": 0xfbbf24
     }
 }
 
@@ -340,28 +343,206 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 1. TACTICAL BOOT / BIOS SEQUENCE SCREEN
+# 1. 3D DRONE HOLOGRAPHIC SCANNER ON BOOT SCREEN
 # -------------------------------------------------------------
 if not st.session_state.boot_complete:
-    st.markdown(f"""
-    <div style='background: rgba(4, 9, 20, 0.95); border: 1px solid {active_theme['primary']}; border-radius: 6px; padding: clamp(20px, 4vw, 40px); max-width: 820px; margin: clamp(20px, 6vh, 60px) auto; box-shadow: 0 0 45px {active_theme['glow']};'>
-        <div style='font-family: Orbitron; font-size: clamp(1.2rem, 2.5vw, 1.75rem); color: {active_theme['primary']}; font-weight: 900; letter-spacing: 2px;'>
-            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v16.0
+    # Three.js 3D UAV Model Component
+    hex_color = f"#{active_theme['drone_hex']:06x}"
+    
+    components.html(f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body {{ margin: 0; overflow: hidden; background: transparent; font-family: 'Courier New', monospace; }}
+            #hud-overlay {{
+                position: absolute; top: 12px; left: 16px; color: {hex_color};
+                font-size: 11px; letter-spacing: 1.5px; text-shadow: 0 0 10px {hex_color};
+                pointer-events: none;
+            }}
+            #target-reticle {{
+                position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                width: 140px; height: 140px; border: 1px dashed rgba(0, 240, 255, 0.35);
+                border-radius: 50%; pointer-events: none;
+                animation: rotateReticle 14s linear infinite;
+            }}
+            @keyframes rotateReticle {{
+                from {{ transform: translate(-50%, -50%) rotate(0deg); }}
+                to {{ transform: translate(-50%, -50%) rotate(360deg); }}
+            }}
+        </style>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    </head>
+    <body>
+        <div id="hud-overlay">
+            &gt; ASSET: MALE UAV-01 [AEROTWIN STEALTH CORE]<br>
+            &gt; SENSORS: ACTIVE FLIR + SAR DOPPLER RADAR<br>
+            &gt; STRUCTURAL SCAN: 50Hz ULTRASONIC ARRAY [ACTIVE]
         </div>
-        <div style='font-size: 0.78rem; color: #64748b; margin-bottom: 18px;'>
+        <div id="target-reticle"></div>
+        <div id="canvas-container"></div>
+
+        <script>
+            const container = document.getElementById('canvas-container');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 15, 34);
+            camera.lookAt(0, 0, 0);
+
+            const renderer = new THREE.WebGLRenderer({{ alpha: true, antialias: true }});
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            const droneGroup = new THREE.Group();
+            scene.add(droneGroup);
+
+            const wireMat = new THREE.MeshBasicMaterial({{
+                color: {active_theme['drone_hex']},
+                wireframe: true,
+                transparent: true,
+                opacity: 0.85
+            }});
+
+            const solidGlowMat = new THREE.MeshBasicMaterial({{
+                color: {active_theme['drone_hex']},
+                transparent: true,
+                opacity: 0.15
+            }});
+
+            // 1. Fuselage
+            const fuseGeo = new THREE.CylinderGeometry(1.2, 0.4, 18, 12);
+            fuseGeo.rotateX(Math.PI / 2);
+            const fuse = new THREE.Mesh(fuseGeo, wireMat);
+            droneGroup.add(fuse);
+
+            // Nose bulb
+            const noseGeo = new THREE.SphereGeometry(1.2, 12, 12);
+            noseGeo.scale(1, 1, 1.8);
+            const nose = new THREE.Mesh(noseGeo, wireMat);
+            nose.position.z = 8.5;
+            droneGroup.add(nose);
+
+            // FLIR Camera Gimbal
+            const gimbalGeo = new THREE.SphereGeometry(0.7, 8, 8);
+            const gimbal = new THREE.Mesh(gimbalGeo, wireMat);
+            gimbal.position.set(0, -1.2, 7.2);
+            droneGroup.add(gimbal);
+
+            // 2. High-Aspect Wings
+            const wingGeo = new THREE.BoxGeometry(34, 0.25, 3.2);
+            const wings = new THREE.Mesh(wingGeo, wireMat);
+            wings.position.set(0, 0.4, 0.5);
+            droneGroup.add(wings);
+
+            // 3. V-Tail Stabilizers
+            const tailFinGeo = new THREE.BoxGeometry(1.2, 4.2, 0.2);
+            const leftFin = new THREE.Mesh(tailFinGeo, wireMat);
+            leftFin.position.set(-2.2, 1.8, -8.2);
+            leftFin.rotation.z = -0.55;
+            leftFin.rotation.x = -0.3;
+            droneGroup.add(leftFin);
+
+            const rightFin = new THREE.Mesh(tailFinGeo, wireMat);
+            rightFin.position.set(2.2, 1.8, -8.2);
+            rightFin.rotation.z = 0.55;
+            rightFin.rotation.x = -0.3;
+            droneGroup.add(rightFin);
+
+            // 4. Rear Pusher Propeller
+            const propGeo = new THREE.BoxGeometry(4.8, 0.4, 0.08);
+            const prop = new THREE.Mesh(propGeo, new THREE.MeshBasicMaterial({{ color: 0x00ff66 }}));
+            prop.position.set(0, 0, -9.2);
+            droneGroup.add(prop);
+
+            // 5. Tactical Ground Radar Rings
+            const ringGeo = new THREE.RingGeometry(16, 16.2, 48);
+            ringGeo.rotateX(Math.PI / 2);
+            const radarRing = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({{
+                color: {active_theme['drone_hex']},
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.25
+            }}));
+            radarRing.position.y = -6;
+            scene.add(radarRing);
+
+            // 6. Laser Scan Plane
+            const scanGeo = new THREE.PlaneGeometry(36, 1.2);
+            scanGeo.rotateX(Math.PI / 2);
+            const scanMat = new THREE.MeshBasicMaterial({{
+                color: {active_theme['laser_hex']},
+                transparent: true,
+                opacity: 0.6,
+                side: THREE.DoubleSide
+            }});
+            const scanPlane = new THREE.Mesh(scanGeo, scanMat);
+            scene.add(scanPlane);
+
+            let scanZ = -10;
+            let scanDir = 1;
+
+            // Mouse Interactive Rotation
+            let mouseX = 0, mouseY = 0;
+            document.addEventListener('mousemove', (e) => {{
+                mouseX = (e.clientX - window.innerWidth / 2) * 0.0008;
+                mouseY = (e.clientY - window.innerHeight / 2) * 0.0008;
+            }});
+
+            function animate() {{
+                requestAnimationFrame(animate);
+
+                // Idle hover & slow yaw
+                droneGroup.rotation.y += 0.007;
+                droneGroup.position.y = Math.sin(Date.now() * 0.002) * 0.4;
+                prop.rotation.z += 0.45; // Propeller spin
+
+                // Laser scan sweep
+                scanZ += 0.22 * scanDir;
+                if (scanZ > 10) scanDir = -1;
+                if (scanZ < -10) scanDir = 1;
+                scanPlane.position.z = scanZ;
+                scanPlane.position.y = droneGroup.position.y;
+
+                radarRing.rotation.z += 0.003;
+
+                // Subtle mouse parallax
+                droneGroup.rotation.x = mouseY * 0.5;
+                droneGroup.rotation.z = -mouseX * 0.5;
+
+                renderer.render(scene, camera);
+            }}
+            animate();
+
+            window.addEventListener('resize', () => {{
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }});
+        </script>
+    </body>
+    </html>
+    """, height=380)
+
+    st.markdown(f"""
+    <div style='background: rgba(4, 9, 20, 0.95); border: 1px solid {active_theme['primary']}; border-radius: 6px; padding: clamp(16px, 3vw, 30px); max-width: 820px; margin: 10px auto; box-shadow: 0 0 40px {active_theme['glow']};'>
+        <div style='font-family: Orbitron; font-size: clamp(1.1rem, 2.2vw, 1.6rem); color: {active_theme['primary']}; font-weight: 900; letter-spacing: 2px;'>
+            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v17.0
+        </div>
+        <div style='font-size: 0.78rem; color: #64748b; margin-bottom: 14px;'>
             TACTICAL PROPULSION DIGITAL TWIN GROUND STATION // MALE UAV FLEET
         </div>
-        <hr style='border: none; border-bottom: 1px solid rgba(255, 255, 255, 0.12); margin-bottom: 18px;' />
-        <div style='font-family: Share Tech Mono; font-size: clamp(0.78rem, 1vw, 0.88rem); line-height: 1.8; color: #94a3b8;'>
-            <div>[0.001] BIOS INITIALIZATION: System Clock Synchronized (UTC/ZULU) ... <span style='color:#00ff66;'>[OK]</span></div>
+        <hr style='border: none; border-bottom: 1px solid rgba(255, 255, 255, 0.12); margin-bottom: 14px;' />
+        <div style='font-family: Share Tech Mono; font-size: clamp(0.76rem, 0.95vw, 0.85rem); line-height: 1.7; color: #94a3b8;'>
+            <div>[0.001] 3D HOLOGRAPHIC AVIONICS SCAN: Airframe Structural Geometry ... <span style='color:#00ff66;'>[VERIFIED]</span></div>
             <div>[0.042] MIL-STD-1553B D-BUS: BC & RT-04 FADEC Telemetry Bus ... <span style='color:#00ff66;'>[LOCKED (50Hz)]</span></div>
             <div>[0.108] THERMODYNAMIC TWIN CORE: Calibrating Rotax 915 MVEM & ISA Maps ... <span style='color:#00ff66;'>[ONLINE]</span></div>
             <div>[0.195] EKF KALMAN FILTER: Initializing Q/R Covariance Bounds (±2σ) ... <span style='color:#00ff66;'>[ARMED]</span></div>
             <div>[0.245] CYBER DEFENSE: Anti-Spoofing Innovation Gating ... <span style='color:#00ff66;'>[ACTIVE]</span></div>
             <div>[0.312] ENCRYPTED DATALINK: AES-256 GCM Handshake Confirmed ... <span style='color:#00ff66;'>[SECURE]</span></div>
-            <div>[0.401] WEAPON STORES & GLIDE SLOPES: Aerodynamic Polar Model Loaded ... <span style='color:#00ff66;'>[READY]</span></div>
         </div>
-        <hr style='border: none; border-bottom: 1px solid rgba(255, 255, 255, 0.12); margin-top: 18px; margin-bottom: 22px;' />
+        <hr style='border: none; border-bottom: 1px solid rgba(255, 255, 255, 0.12); margin-top: 14px; margin-bottom: 20px;' />
     </div>
     """, unsafe_allow_html=True)
 
@@ -380,11 +561,10 @@ if not st.session_state.boot_complete:
 st.sidebar.markdown(f"""
 <div style='text-align: center; padding: 6px 0;'>
     <div style='font-family: Orbitron; font-size: 1.15rem; color: {active_theme['primary']}; letter-spacing: 2px;'>AEROTWIN TACTICAL</div>
-    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 16.0.0-PRO</div>
+    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 17.0.0-PRO</div>
 </div>
 """, unsafe_allow_html=True)
 
-# VIEWPORT SWITCHER
 st.sidebar.markdown("---")
 st.sidebar.markdown(f"<div style='font-family: Orbitron; font-size: 0.8rem; color: {active_theme['primary']};'>DISPLAY WORKSPACE MODE</div>", unsafe_allow_html=True)
 vp_mode = st.sidebar.radio(
@@ -408,7 +588,7 @@ if selected_theme != st.session_state.hud_theme:
     st.session_state.hud_theme = selected_theme
     st.rerun()
 
-if st.sidebar.button("🔄 RE-RUN BOOT SEQUENCE"):
+if st.sidebar.button("🔄 RE-RUN 3D BOOT SEQUENCE"):
     st.session_state.boot_complete = False
     st.rerun()
 
@@ -600,7 +780,6 @@ def make_hud_gauge(title, value, min_v, max_v, unit, alert_v, warn_v, is_invert=
     fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', height=height, margin=dict(l=6, r=6, t=28, b=6), font={'family': "Share Tech Mono"})
     return fig
 
-# PFD Figure Builder
 def make_pfd_figure(pitch, cur_spd, cur_alt, height=170):
     fig_pfd = go.Figure()
     fig_pfd.add_shape(type="rect", x0=-8, y0=-10, x1=8, y1=pitch, fillcolor="#78350f", line=dict(width=0))
@@ -609,15 +788,12 @@ def make_pfd_figure(pitch, cur_spd, cur_alt, height=170):
     fig_pfd.add_shape(type="line", x0=-2, y0=pitch + 3, x1=2, y1=pitch + 3, line=dict(color="rgba(255,255,255,0.7)", width=1.5))
     fig_pfd.add_shape(type="line", x0=-2, y0=pitch - 3, x1=2, y1=pitch - 3, line=dict(color="rgba(255,255,255,0.7)", width=1.5, dash="dot"))
 
-    # Airspeed Tape (Left)
     fig_pfd.add_shape(type="rect", x0=-10, y0=-10, x1=-7.5, y1=10, fillcolor="rgba(8,16,32,0.9)", line=dict(color=active_theme['border'], width=1))
     fig_pfd.add_annotation(x=-8.75, y=0, text=f"<b>{cur_spd}</b><br><span style='font-size:9px'>KCAS</span>", showarrow=False, font=dict(color="#00ff66", size=10, family="Orbitron"))
 
-    # Altitude Tape (Right)
     fig_pfd.add_shape(type="rect", x0=7.5, y0=-10, x1=10, y1=10, fillcolor="rgba(8,16,32,0.9)", line=dict(color=active_theme['border'], width=1))
     fig_pfd.add_annotation(x=8.75, y=0, text=f"<b>{cur_alt}</b><br><span style='font-size:9px'>M</span>", showarrow=False, font=dict(color="#00f0ff", size=10, family="Orbitron"))
 
-    # Aircraft Center Symbol
     fig_pfd.add_shape(type="line", x0=-3.5, y0=0, x1=-1.2, y1=0, line=dict(color="#facc15", width=3))
     fig_pfd.add_shape(type="line", x0=1.2, y0=0, x1=3.5, y1=0, line=dict(color="#facc15", width=3))
     fig_pfd.add_shape(type="circle", x0=-0.5, y0=-0.5, x1=0.5, y1=0.5, line=dict(color="#facc15", width=2))
@@ -637,7 +813,6 @@ cur_alt = int(current_row['altitude_m'])
 
 # DYNAMIC RESPONSIVE LAYOUT SWITCHING (DESKTOP vs MOBILE)
 if not is_mobile:
-    # Desktop 5-Column Cockpit View
     pfd_col, g1, g2, g3, g4 = st.columns([1.35, 1, 1, 1, 1])
     with pfd_col:
         st.plotly_chart(make_pfd_figure(pitch, cur_spd, cur_alt, height=170), use_container_width=True)
@@ -650,7 +825,6 @@ if not is_mobile:
     with g4:
         st.plotly_chart(make_hud_gauge("CRANKSHAFT", current_row['rpm'], 0, 6000, "RPM", 5600, 5200), use_container_width=True)
 else:
-    # Mobile 2x2 Compact Grid View
     st.plotly_chart(make_pfd_figure(pitch, cur_spd, cur_alt, height=150), use_container_width=True)
     mob_row1_col1, mob_row1_col2 = st.columns(2)
     with mob_row1_col1:
