@@ -246,7 +246,7 @@ transmitter_daemon = EmbeddedUAVTransmitter.get_instance()
 st.sidebar.markdown("""
 <div style='text-align: center; padding: 5px 0;'>
     <div style='font-family: Orbitron; font-size: 1.15rem; color: #00f0ff; letter-spacing: 2px;'>AEROTWIN TACTICAL</div>
-    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE TELEMETRY NODE // 12.0.0-PRO</div>
+    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE TELEMETRY NODE // 12.1.0-PRO</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -621,21 +621,23 @@ with tab3:
     p_peak = (5500.0 * knock_penalty) if metrics['severity'] != "RED" else 3600.0
     p_exp = p_peak * (v_c / v_arr)**gamma
 
-    # Fix: define v_loop and p_loop properly for nominal and active
     v_loop = np.concatenate([v_arr, v_arr[::-1], [v_c]])
     p_loop = np.concatenate([p_comp, p_exp[::-1], [p_comp[0]]])
 
     p_peak_nom = 5500.0
     p_exp_nom = p_peak_nom * (v_c / v_arr)**gamma
     p_loop_nom = np.concatenate([p_comp, p_exp_nom[::-1], [p_comp[0]]])
-    v_loop_nom = v_loop  # Bug fixed here
+    v_loop_nom = v_loop
 
     fig_pv = go.Figure()
     fig_pv.add_trace(go.Scatter(x=v_loop_nom, y=p_loop_nom, mode='lines', line=dict(color='#00f0ff', dash='dash', width=2), name="Nominal Cycle"))
     fig_pv.add_trace(go.Scatter(x=v_loop, y=p_loop, fill='toself', fillcolor='rgba(255, 0, 60, 0.2)' if metrics['severity'] == "RED" else 'rgba(0, 255, 102, 0.2)',
                                 line=dict(color='#ff003c' if metrics['severity'] == "RED" else '#00ff66', width=3), name="Active Cycle"))
 
-    imep_val = round(np.trapz(p_exp - p_comp, v_arr) / v_d, 1)
+    # Version-safe trapezoidal integration (NumPy 1.x & 2.0+ compatible)
+    delta_p = p_exp - p_comp
+    work_integral = float(np.sum(0.5 * (delta_p[:-1] + delta_p[1:]) * np.diff(v_arr)))
+    imep_val = round(work_integral / v_d, 1)
     thermal_eff = round(max(15.0, min(36.0, 34.0 - (current_row['cht_actual'] - 110.0) * 0.35)), 1)
 
     fig_pv.update_layout(
