@@ -11,6 +11,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from core.engine_physics import AeroPistonDigitalTwin  # type: ignore
 from core.prognostics import EnginePrognostics  # type: ignore
+from core.telemetry_bridge import DroneTelemetryBridge  # type: ignore
 
 st.set_page_config(
     page_title="AeroTwin Tactical GCS | Defense-Grade MALE UAV",
@@ -19,7 +20,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Military Tactical HUD Styling
+# Military HUD Stylesheet
 st.markdown("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -121,63 +122,97 @@ if "fuel_enrich" not in st.session_state:
     st.session_state.fuel_enrich = False
 if "swarm_handover" not in st.session_state:
     st.session_state.swarm_handover = False
+if "live_history" not in st.session_state:
+    st.session_state.live_history = []
+if "telemetry_bridge" not in st.session_state:
+    st.session_state.telemetry_bridge = DroneTelemetryBridge()
 
-# Sidebar Controls
+# Sidebar: Tactical Datalink Configuration
 st.sidebar.markdown("""
 <div style='text-align: center; padding: 5px 0;'>
     <div style='font-family: Orbitron; font-size: 1.15rem; color: #00f0ff; letter-spacing: 2px;'>AEROTWIN TACTICAL</div>
-    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE TELEMETRY NODE // 7.0.0-PRO</div>
+    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE TELEMETRY NODE // 8.0.0-PRO</div>
 </div>
 """, unsafe_allow_html=True)
 
 st.sidebar.markdown("---")
-scenario = st.sidebar.selectbox(
-    "MISSION SCENARIO INJECTION",
-    ["NOMINAL", "COOLING_FAILURE", "LUBRICATION_LOSS"],
-    index=1
+source_mode = st.sidebar.radio(
+    "TELEMETRY INGESTION MODE",
+    ["MISSION REPLAY (SYNTHETIC)", "🔴 LIVE HARDWARE UDP LINK (PORT 14550)"]
 )
 
-ew_tamper = st.sidebar.toggle("📡 Inject Electronic Warfare / Sensor Spoofing", value=False)
-enable_voice = st.sidebar.checkbox("🔊 Voice HUD Announcements", value=True)
-
-@st.cache_data
-def load_telemetry(scen):
-    twin = AeroPistonDigitalTwin()
-    return twin.generate_mission_telemetry(total_seconds=200, fault_scenario=scen)
-
-df = load_telemetry(scenario)
 prognostics = EnginePrognostics()
 
-st.sidebar.markdown("---")
-st.sidebar.markdown("<div style='font-family: Orbitron; font-size: 0.8rem; color: #00f0ff;'>SIMULATION STREAM CONTROLLER</div>", unsafe_allow_html=True)
+if source_mode == "🔴 LIVE HARDWARE UDP LINK (PORT 14550)":
+    st.sidebar.success("● LISTENING ON UDP://0.0.0.0:14550")
+    st.sidebar.caption("Accepting MAVLink/CAN serialized frames from external UAV companion computers.")
 
-col_p1, col_p2 = st.sidebar.columns(2)
-if col_p1.button("▶ PLAY STREAM" if not st.session_state.is_playing else "⏸ PAUSE"):
-    st.session_state.is_playing = not st.session_state.is_playing
+    bridge = st.session_state.telemetry_bridge
+    packet = bridge.receive_latest_frame()
 
-if col_p2.button("🔄 RESTART"):
-    st.session_state.t_idx = 0
-    st.session_state.is_playing = False
-    st.session_state.limp_mode = False
-    st.session_state.fuel_enrich = False
-    st.session_state.swarm_handover = False
+    if packet is not None:
+        st.session_state.live_history.append(packet)
+        if len(st.session_state.live_history) > 150:
+            st.session_state.live_history.pop(0)
 
-st.session_state.t_idx = st.sidebar.slider(
-    "Mission Elapsed Time (Seconds)",
-    0, len(df) - 1,
-    st.session_state.t_idx
-)
+    if len(st.session_state.live_history) == 0:
+        # Fallback dummy frame until real packet arrives
+        df = pd.DataFrame([{
+            "timestamp": 0, "rpm": 5000, "cht_actual": 110.0, "cht_physics": 110.0,
+            "oil_press_actual": 4.2, "oil_press_physics": 4.2, "egt_actual": 810.0,
+            "egt_physics": 810.0, "map_inhg": 32.0, "vibration_rms": 1.1,
+            "altitude_m": 1200, "fuel_flow": 24.0, "flight_phase": "STANDBY"
+        }])
+        current_row = df.iloc[0].copy()
+        t_idx = 0
+    else:
+        df = pd.DataFrame(st.session_state.live_history)
+        current_row = df.iloc[-1].copy()
+        t_idx = len(df) - 1
 
-t_idx = st.session_state.t_idx
-current_row = df.iloc[t_idx].copy()
+    scenario = "HARDWARE_LIVE_STREAM"
+    ew_tamper = False
 
-# EW Spoofing injection
+else:
+    scenario = st.sidebar.selectbox(
+        "MISSION SCENARIO INJECTION",
+        ["NOMINAL", "COOLING_FAILURE", "LUBRICATION_LOSS"],
+        index=1
+    )
+    ew_tamper = st.sidebar.toggle("📡 Inject Electronic Warfare / Sensor Spoofing", value=False)
+
+    @st.cache_data
+    def load_telemetry(scen):
+        twin = AeroPistonDigitalTwin()
+        return twin.generate_mission_telemetry(total_seconds=200, fault_scenario=scen)
+
+    df = load_telemetry(scenario)
+
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("<div style='font-family: Orbitron; font-size: 0.8rem; color: #00f0ff;'>SIMULATION CONTROLLER</div>", unsafe_allow_html=True)
+    col_p1, col_p2 = st.sidebar.columns(2)
+    if col_p1.button("▶ PLAY STREAM" if not st.session_state.is_playing else "⏸ PAUSE"):
+        st.session_state.is_playing = not st.session_state.is_playing
+    if col_p2.button("🔄 RESTART"):
+        st.session_state.t_idx = 0
+        st.session_state.is_playing = False
+        st.session_state.limp_mode = False
+        st.session_state.fuel_enrich = False
+        st.session_state.swarm_handover = False
+
+    st.session_state.t_idx = st.sidebar.slider("Mission Elapsed Time (MET)", 0, len(df) - 1, st.session_state.t_idx)
+    t_idx = st.session_state.t_idx
+    current_row = df.iloc[t_idx].copy()
+
+enable_voice = st.sidebar.checkbox("🔊 Voice HUD Announcements", value=True)
+
+# EW Spoofing Logic
 spoofed_flag = False
 if ew_tamper and t_idx > 80:
     current_row['cht_actual'] += 45.0
     spoofed_flag = True
 
-# Human-In-The-Loop Countermeasure Modifiers
+# Pilot Mitigations
 if st.session_state.limp_mode:
     current_row['rpm'] = max(3600, current_row['rpm'] - 800)
     current_row['cht_actual'] = max(current_row['cht_physics'], current_row['cht_actual'] - 11.5)
@@ -194,21 +229,22 @@ if st.session_state.limp_mode or st.session_state.fuel_enrich:
         metrics['severity'] = "AMBER"
         metrics['status'] = "DEGRADED PROPULSION [MITIGATED]"
 
-# Header Telemetry Strip
+# Header Strip
 st.markdown("<div class='hud-header'>⚡ AEROTWIN: MALE UAV PROPULSION TWIN</div>", unsafe_allow_html=True)
+link_label = "🔴 LIVE UDP DATALINK (50Hz)" if source_mode != "MISSION REPLAY (SYNTHETIC)" else "● ENCRYPTED REPLAY STREAM"
 
 st.markdown(f"""
 <div class='telemetry-strip'>
-    <div>SYSTEM: <span style='color: #00ff66;'>● SECURE TELEMETRY LINK</span></div>
-    <div>MISSION REGIME: <b>{current_row['flight_phase']}</b></div>
+    <div>SYSTEM: <span style='color: #00ff66;'>{link_label}</span></div>
+    <div>REGIME: <b>{current_row['flight_phase']}</b></div>
     <div>ALTITUDE: <b>{current_row['altitude_m']} M</b></div>
     <div>AIRSPEED: <b>{115 if not st.session_state.limp_mode else 92} KCAS</b></div>
     <div>ISA OAT: <b>{round(15 - 0.0065 * current_row['altitude_m'], 1)}°C</b></div>
-    <div>MISSION CLOCK: <b>T+{t_idx:03d}s</b></div>
+    <div>MISSION CLOCK: <b>T+{current_row['timestamp']:03.0f}s</b></div>
 </div>
 """, unsafe_allow_html=True)
 
-# Cockpit Gauges
+# Gauges Strip
 g1, g2, g3, g4 = st.columns(4)
 
 def make_hud_gauge(title, value, min_v, max_v, unit, alert_v, warn_v, is_invert=False):
@@ -228,11 +264,7 @@ def make_hud_gauge(title, value, min_v, max_v, unit, alert_v, warn_v, is_invert=
                 {'range': [warn_v, alert_v] if not is_invert else [warn_v, alert_v], 'color': 'rgba(255, 183, 3, 0.2)'},
                 {'range': [alert_v, max_v] if not is_invert else [min_v, warn_v], 'color': 'rgba(255, 0, 60, 0.3)'}
             ],
-            'threshold': {
-                'line': {'color': "#ff003c", 'width': 3},
-                'thickness': 0.75,
-                'value': alert_v
-            }
+            'threshold': {'line': {'color': "#ff003c", 'width': 3}, 'thickness': 0.75, 'value': alert_v}
         }
     ))
     fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', height=175, margin=dict(l=15, r=15, t=30, b=15), font={'family': "Share Tech Mono"})
@@ -251,8 +283,7 @@ with g4:
 if spoofed_flag:
     st.markdown("""
     <div style='background: rgba(88, 28, 135, 0.85); border: 1px solid #c084fc; border-left: 8px solid #a855f7; padding: 14px 20px; border-radius: 6px; margin-bottom: 18px;'>
-        <strong>🛡️ KALMAN INNOVATION GATING ACTIVE:</strong> Sensor packet anomaly rejected.<br>
-        <strong>Residual Verification:</strong> Gradient exceeds physical maximum (+45°C in 20ms). Telemetry isolated as sensor spoofing. Primary flight model retained.
+        <strong>🛡️ KALMAN INNOVATION GATING ACTIVE:</strong> Sensor anomaly rejected (+45°C spoof spike). Primary flight model retained.
     </div>
     """, unsafe_allow_html=True)
 elif metrics["severity"] == "RED":
@@ -276,23 +307,7 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
-# Voice Audio Synthesizer
-if enable_voice and metrics["severity"] == "RED" and st.session_state.last_voice_alert != "RED" and not spoofed_flag:
-    st.session_state.last_voice_alert = "RED"
-    components.html("""
-    <script>
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        let msg = new SpeechSynthesisUtterance("Warning. Propulsion critical. Autonomous Return To Base vector active.");
-        msg.rate = 1.05; msg.pitch = 0.85;
-        window.speechSynthesis.speak(msg);
-    }
-    </script>
-    """, height=0)
-elif metrics["severity"] != "RED":
-    st.session_state.last_voice_alert = metrics["severity"]
-
-# Pilot Countermeasure Station
+# Pilot Action Station
 st.markdown("<div style='font-family: Orbitron; font-size: 0.95rem; color: #00f0ff; margin-bottom: 8px;'>🕹️ TACTICAL PILOT MITIGATION & COUNTERMEASURES</div>", unsafe_allow_html=True)
 c_mit1, c_mit2, c_mit3 = st.columns(3)
 with c_mit1:
@@ -335,33 +350,15 @@ with tab1:
         st.markdown("<div style='color: #00f0ff; font-weight: bold;'>CYLINDER HEAD TEMPERATURE: RAW SENSOR VS. EKF FILTER VS. TWIN</div>", unsafe_allow_html=True)
         time_slice = df['timestamp'][:t_idx+1]
         raw_cht = df['cht_actual'][:t_idx+1]
-        
-        # Extended Kalman Filter (EKF) smoothed estimate + 2-sigma confidence band
         ekf_cht = raw_cht.rolling(window=4, min_periods=1).mean()
         sigma_2 = 1.4
 
         fig_cht = go.Figure()
-        fig_cht.add_trace(go.Scatter(
-            x=time_slice, y=ekf_cht + sigma_2, mode='lines',
-            line=dict(width=0), showlegend=False
-        ))
-        fig_cht.add_trace(go.Scatter(
-            x=time_slice, y=ekf_cht - sigma_2, mode='lines',
-            line=dict(width=0), fill='tonexty', fillcolor='rgba(0, 240, 255, 0.12)',
-            name="EKF ±2σ Uncertainty Band"
-        ))
-        fig_cht.add_trace(go.Scatter(
-            x=time_slice, y=raw_cht, mode='markers',
-            marker=dict(color="#ff0055", size=4, opacity=0.6), name="Raw CAN Bus Telemetry"
-        ))
-        fig_cht.add_trace(go.Scatter(
-            x=time_slice, y=ekf_cht, mode='lines',
-            line=dict(color="#00f0ff", width=2.5), name="EKF Filtered State"
-        ))
-        fig_cht.add_trace(go.Scatter(
-            x=time_slice, y=df['cht_physics'][:t_idx+1], mode='lines',
-            line=dict(color="#94a3b8", dash="dash", width=2), name="Physics Twin Target"
-        ))
+        fig_cht.add_trace(go.Scatter(x=time_slice, y=ekf_cht + sigma_2, mode='lines', line=dict(width=0), showlegend=False))
+        fig_cht.add_trace(go.Scatter(x=time_slice, y=ekf_cht - sigma_2, mode='lines', line=dict(width=0), fill='tonexty', fillcolor='rgba(0, 240, 255, 0.12)', name="EKF ±2σ Uncertainty"))
+        fig_cht.add_trace(go.Scatter(x=time_slice, y=raw_cht, mode='markers', marker=dict(color="#ff0055", size=4, opacity=0.6), name="Raw CAN Bus Feed"))
+        fig_cht.add_trace(go.Scatter(x=time_slice, y=ekf_cht, mode='lines', line=dict(color="#00f0ff", width=2.5), name="EKF Filtered State"))
+        fig_cht.add_trace(go.Scatter(x=time_slice, y=df['cht_physics'][:t_idx+1], mode='lines', line=dict(color="#94a3b8", dash="dash", width=2), name="Physics Twin Target"))
         fig_cht.add_hline(y=145.0, line_dash="dot", line_color="#ffb703", annotation_text="Limit (145°C)")
         fig_cht.update_layout(hud_plot_layout, height=310, yaxis_title="°C")
         st.plotly_chart(fig_cht, use_container_width=True)
@@ -369,19 +366,13 @@ with tab1:
     with col_t2:
         st.markdown("<div style='color: #00ff66; font-weight: bold;'>LUBRICATION CIRCUIT PRESSURE</div>", unsafe_allow_html=True)
         fig_oil = go.Figure()
-        fig_oil.add_trace(go.Scatter(
-            x=time_slice, y=df['oil_press_actual'][:t_idx+1],
-            name="Oil Pressure Actual", line=dict(color="#00ff66", width=3)
-        ))
-        fig_oil.add_trace(go.Scatter(
-            x=time_slice, y=df['oil_press_physics'][:t_idx+1],
-            name="Physics Baseline", line=dict(color="#94a3b8", dash="dash", width=2)
-        ))
+        fig_oil.add_trace(go.Scatter(x=time_slice, y=df['oil_press_actual'][:t_idx+1], name="Oil Pressure Actual", line=dict(color="#00ff66", width=3)))
+        fig_oil.add_trace(go.Scatter(x=time_slice, y=df['oil_press_physics'][:t_idx+1], name="Physics Baseline", line=dict(color="#94a3b8", dash="dash", width=2)))
         fig_oil.add_hline(y=1.5, line_dash="dot", line_color="#ff003c", annotation_text="Cavitation Limit (1.5 bar)")
         fig_oil.update_layout(hud_plot_layout, height=310, yaxis_title="bar")
         st.plotly_chart(fig_oil, use_container_width=True)
 
-    st.markdown("<div style='color: #00f0ff; font-weight: bold; margin-top: 10px;'>REAL-TIME SUBSYSTEM RESIDUAL ERROR MATRIX</div>", unsafe_allow_html=True)
+    st.markdown("<div style='color: #00f0ff; font-weight: bold; margin-top: 10px;'>SUBSYSTEM RESIDUAL ERROR MATRIX</div>", unsafe_allow_html=True)
     matrix_data = [
         {"Subsystem": "Cylinder Head Thermal Loop", "Actual Telemetry": f"{current_row['cht_actual']} °C", "Twin Expected": f"{current_row['cht_physics']} °C", "Residual Error (Δ)": f"+{metrics['residuals']['cht_delta']} °C", "Status": "CRITICAL DRIFT" if metrics['residuals']['cht_delta'] > 15.0 else "NOMINAL"},
         {"Subsystem": "Exhaust Gas Thermal Loop", "Actual Telemetry": f"{current_row['egt_actual']} °C", "Twin Expected": f"{current_row['egt_physics']} °C", "Residual Error (Δ)": f"+{metrics['residuals']['egt_delta']} °C", "Status": "NOMINAL"},
@@ -401,7 +392,7 @@ with tab2:
         fig_xai = go.Figure(go.Waterfall(
             name="Penalty Attribution", orientation="v",
             measure=["relative", "relative", "relative", "relative", "total"],
-            x=["Model Baseline", "CHT Thermal Drift", "Oil Pressure Drop", "Detonation Knock", "Final Health Index"],
+            x=["Model Baseline", "CHT Drift", "Oil Drop", "Knock", "Final Health"],
             textposition="outside",
             text=[f"100.0%", f"-{cht_penalty:.1f}%", f"-{oil_penalty:.1f}%", f"-{vib_penalty:.1f}%", f"{metrics['health_index']}%"],
             y=[100.0, -cht_penalty, -oil_penalty, -vib_penalty, 0],
@@ -415,15 +406,12 @@ with tab2:
 
     with col_xai2:
         st.markdown("<div style='color: #00ff66; font-weight: bold;'>TACTICAL SWARM MESH TELEMETRY</div>", unsafe_allow_html=True)
-        st.caption("Decentralized cross-link health monitoring with neighboring MALE UAV flight assets.")
-        
         swarm_data = [
             {"Asset ID": "UAV-01 (HOST)", "Role": "Lead Patrol", "Health": f"{metrics['health_index']}%", "Link Status": "ACTIVE LINK"},
             {"Asset ID": "UAV-02 (RELAY)", "Role": "Datalink Node", "Health": "98.4%", "Link Status": "NOMINAL"},
             {"Asset ID": "UAV-03 (RESERVE)", "Role": "Standby Orbit", "Health": "99.1%", "Link Status": "NOMINAL"}
         ]
         st.dataframe(pd.DataFrame(swarm_data), use_container_width=True)
-        
         if metrics['severity'] == "RED":
             if st.button("🤝 EXECUTE AUTONOMOUS MISSION HANDOVER"):
                 st.session_state.swarm_handover = True
@@ -435,26 +423,18 @@ with tab3:
     col_glide1, col_glide2 = st.columns(2)
     with col_glide1:
         st.markdown("<div style='color: #00f0ff; font-weight: bold;'>UNPOWERED DEAD-STICK GLIDE SLOPE PROFILE</div>", unsafe_allow_html=True)
-        st.caption("Theoretical gliding descent angle (L/D = 12:1) from current altitude to FOB Alpha runway.")
-
-        dist_range = np.linspace(0, 35, 30)  # km to base
+        dist_range = np.linspace(0, 35, 30)
         current_alt_km = current_row['altitude_m'] / 1000.0
         glide_slope_alt = np.maximum(0, current_alt_km - (dist_range / 12.0)) * 1000.0
 
         fig_glide = go.Figure()
-        fig_glide.add_trace(go.Scatter(
-            x=dist_range, y=glide_slope_alt, mode='lines',
-            line=dict(color='#00ff66' if glide_slope_alt[-1] == 0 else '#ff003c', width=3),
-            name="Unpowered Descent Path"
-        ))
-        fig_glide.add_hline(y=0, line_color="#ffffff", annotation_text="Runway 09 Threshold")
+        fig_glide.add_trace(go.Scatter(x=dist_range, y=glide_slope_alt, mode='lines', line=dict(color='#00ff66' if glide_slope_alt[-1] == 0 else '#ff003c', width=3), name="Descent Path"))
+        fig_glide.add_hline(y=0, line_color="#ffffff", annotation_text="Runway Threshold")
         fig_glide.update_layout(hud_plot_layout, height=330, xaxis_title="Distance to FOB Alpha (km)", yaxis_title="Altitude (m AGL)")
         st.plotly_chart(fig_glide, use_container_width=True)
 
     with col_glide2:
         st.markdown("<div style='color: #00ff66; font-weight: bold;'>MONTE CARLO PROGNOSTIC RUL ENVELOPE</div>", unsafe_allow_html=True)
-        st.caption("Degradation slope with P10, P50, and P90 confidence intervals.")
-
         future_t = np.linspace(0, 120, 25)
         current_h = metrics['health_index']
         decay_rate = 0.05 if current_h > 70 else (0.45 if current_h > 40 else 0.85)
@@ -467,11 +447,8 @@ with tab3:
 
         fig_mc = go.Figure()
         fig_mc.add_trace(go.Scatter(x=future_t, y=p10_h, line=dict(color='rgba(0, 240, 255, 0.2)'), showlegend=False))
-        fig_mc.add_trace(go.Scatter(
-            x=future_t, y=p90_h, fill='tonexty', fillcolor='rgba(255, 0, 60, 0.15)',
-            line=dict(color='rgba(255, 0, 60, 0.2)'), name='90% Confidence Interval'
-        ))
-        fig_mc.add_trace(go.Scatter(x=future_t, y=p50_h, line=dict(color='#00f0ff', width=3), name='P50 Degradation'))
+        fig_mc.add_trace(go.Scatter(x=future_t, y=p90_h, fill='tonexty', fillcolor='rgba(255, 0, 60, 0.15)', line=dict(color='rgba(255, 0, 60, 0.2)'), name='90% Confidence'))
+        fig_mc.add_trace(go.Scatter(x=future_t, y=p50_h, line=dict(color='#00f0ff', width=3), name='P50 Projection'))
         fig_mc.add_hline(y=20.0, line_dash="dash", line_color="#ff003c", annotation_text="Seizure Limit (20%)")
         fig_mc.update_layout(hud_plot_layout, height=330, xaxis_title="Minutes Ahead", yaxis_title="Health Index (%)")
         st.plotly_chart(fig_mc, use_container_width=True)
@@ -484,11 +461,7 @@ with tab4:
     oil_col = "#ff003c" if oil_p < 1.8 else ("#ffb703" if oil_p < 2.5 else "#00ff66")
 
     fig_3d = go.Figure()
-    fig_3d.add_trace(go.Scatter3d(
-        x=[0, 0], y=[-1.8, 1.8], z=[0, 0], mode="lines",
-        line=dict(color="#00f0ff", width=10), name="Crankshaft Centerline"
-    ))
-
+    fig_3d.add_trace(go.Scatter3d(x=[0, 0], y=[-1.8, 1.8], z=[0, 0], mode="lines", line=dict(color="#00f0ff", width=10), name="Crankshaft"))
     cyl_coords = [
         {"name": "Cyl 1 [FWD-L]", "x": -1.2, "y": 1.0, "z": 0.4, "temp": cht_val},
         {"name": "Cyl 2 [FWD-R]", "x": 1.2, "y": 1.0, "z": 0.4, "temp": cht_val},
@@ -501,17 +474,8 @@ with tab4:
             marker=dict(size=28, color=cyl_col, symbol="square", opacity=0.9),
             text=[f"<b>{c['name']}</b><br>{c['temp']}°C"], textposition="top center", name=c["name"]
         ))
-
-    fig_3d.add_trace(go.Scatter3d(
-        x=[0], y=[-1.6], z=[1.1], mode="markers+text",
-        marker=dict(size=22, color="#00f0ff", symbol="diamond"),
-        text=[f"<b>TURBOCHARGER</b><br>{current_row['map_inhg']} inHg"], textposition="top center", name="Turbo"
-    ))
-    fig_3d.add_trace(go.Scatter3d(
-        x=[0], y=[0], z=[-0.9], mode="markers+text",
-        marker=dict(size=24, color=oil_col, symbol="circle"),
-        text=[f"<b>OIL SUMP</b><br>{oil_p} bar"], textposition="bottom center", name="Oil Gallery"
-    ))
+    fig_3d.add_trace(go.Scatter3d(x=[0], y=[-1.6], z=[1.1], mode="markers+text", marker=dict(size=22, color="#00f0ff", symbol="diamond"), text=[f"<b>TURBOCHARGER</b><br>{current_row['map_inhg']} inHg"], textposition="top center", name="Turbo"))
+    fig_3d.add_trace(go.Scatter3d(x=[0], y=[0], z=[-0.9], mode="markers+text", marker=dict(size=24, color=oil_col, symbol="circle"), text=[f"<b>OIL SUMP</b><br>{oil_p} bar"], textposition="bottom center", name="Oil Gallery"))
 
     fig_3d.update_layout(
         paper_bgcolor='rgba(5, 10, 20, 0.6)', height=480,
@@ -529,7 +493,8 @@ with tab5:
     st.markdown("<div style='color: #00f0ff; font-weight: bold;'>TACTICAL MISSION RADAR & AUTONOMOUS RTB VECTOR</div>", unsafe_allow_html=True)
     uav_x = [0, 8, 16, 25, 32, 38, 42, 40, 32, 22, 12, 5, 0]
     uav_y = [0, 6, 12, 18, 22, 22, 15, 6, -2, -6, -4, -1, 0]
-    norm_idx = int((t_idx / len(df)) * (len(uav_x) - 1))
+    norm_idx = int((t_idx / max(1, len(df))) * (len(uav_x) - 1))
+    norm_idx = min(norm_idx, len(uav_x) - 1)
     cur_x = uav_x[norm_idx]
     cur_y = uav_y[norm_idx]
 
@@ -539,7 +504,7 @@ with tab5:
 
     fig_radar.add_trace(go.Scatter(x=uav_x[:norm_idx+1], y=uav_y[:norm_idx+1], mode="lines+markers", line=dict(color="#00f0ff", width=2.5), name="Patrol Track"))
     fig_radar.add_trace(go.Scatter(x=[0], y=[0], mode="markers+text", marker=dict(size=14, color="#00ff66", symbol="triangle-up"), text=["<b>[BASE FOB ALPHA]</b>"], textposition="bottom center", name="Home Base"))
-    fig_radar.add_trace(go.Scatter(x=[cur_x], y=[cur_y], mode="markers+text", marker=dict(size=16, color="#ff0055" if metrics["severity"] == "RED" else "#00f0ff", symbol="diamond"), text=[f"<b>UAV-01 (T+{t_idx}s)</b>"], textposition="top right", name="UAV Vector"))
+    fig_radar.add_trace(go.Scatter(x=[cur_x], y=[cur_y], mode="markers+text", marker=dict(size=16, color="#ff0055" if metrics["severity"] == "RED" else "#00f0ff", symbol="diamond"), text=[f"<b>UAV-01 (T+{current_row['timestamp']:.0f}s)</b>"], textposition="top right", name="UAV Vector"))
 
     if metrics["severity"] == "RED" and not spoofed_flag:
         fig_radar.add_trace(go.Scatter(x=[cur_x, 0], y=[cur_y, 0], mode="lines+text", line=dict(color="#ff003c", width=3, dash="dashdot"), text=["", "<b>AUTONOMOUS RTB DIVERSION ENGAGED</b>"], textposition="middle right", name="Autonomous RTB Vector"))
@@ -552,35 +517,24 @@ with tab6:
     with col_log:
         st.markdown("<div style='color: #00f0ff; font-weight: bold;'>MIL-STD AUTONOMOUS AI CO-PILOT TERMINAL LOG</div>", unsafe_allow_html=True)
         log_feed = [
-            f"[T+000] FADEC_BUS: MIL-STD-1553 bus synchronized at 50Hz. All nodes verified.",
-            f"[T+015] FADEC_BUS: Airspeed 115 KCAS locked. Climb regime executed.",
-            f"[T+050] THERMAL_CORE: Cruising altitude {current_row['altitude_m']}m. ISA Baseline active."
+            f"[T+000] FADEC_BUS: Link active. Ingestion mode: {source_mode}.",
+            f"[T+015] FADEC_BUS: Sampling synchronous frame pipeline.",
+            f"[T+050] THERMAL_CORE: Cruising altitude {current_row['altitude_m']}m. Model synchronized."
         ]
         if spoofed_flag:
-            log_feed.append(f"[T+{t_idx:03d}] CYBER_DEFENSE: Anomaly detected on CAN Bus channel 2.")
-            log_feed.append(f"[T+{t_idx:03d}] KALMAN_GATE: Rejecting packet: delta_T (+45°C) exceeds thermal inertia.")
-        if t_idx >= 100 and not spoofed_flag:
-            if scenario == "COOLING_FAILURE":
-                log_feed.append(f"[T+100] SENSOR_ALERT: CHT drift rate exceeds +0.45°C/s threshold.")
-                log_feed.append(f"[T+108] RESIDUAL_ENGINE: CHT model residual breached (+15.0°C deviation).")
-            elif scenario == "LUBRICATION_LOSS":
-                log_feed.append(f"[T+100] SENSOR_ALERT: Oil gallery pressure drop below nominal.")
+            log_feed.append(f"[T+{t_idx:03d}] KALMAN_GATE: Rejected spoofed telemetry spike (+45°C).")
+        if metrics["severity"] in ["RED", "AMBER"]:
+            log_feed.append(f"[T+{t_idx:03d}] PROGNOSTICS_AI: Health Index {metrics['health_index']}%. Fault: {metrics['status']}.")
         if st.session_state.limp_mode:
-            log_feed.append(f"[T+{t_idx:03d}] MITIGATION: Pilot engaged 65% Limp-Home mode. RPM curbed.")
-        if st.session_state.fuel_enrich:
-            log_feed.append(f"[T+{t_idx:03d}] MITIGATION: Mixture enriched. CHT cooling quench active.")
+            log_feed.append(f"[T+{t_idx:03d}] MITIGATION: 65% Limp-Home throttle engaged.")
         if st.session_state.swarm_handover:
-            log_feed.append(f"[T+{t_idx:03d}] DATALINK_MESH: Handover handshake complete with UAV-02.")
-        if metrics["severity"] == "RED" and not spoofed_flag and not st.session_state.limp_mode:
-            log_feed.append(f"[T+{t_idx:03d}] PROGNOSTICS_AI: RUL degraded to {metrics['rul_hours']} hrs.")
-            log_feed.append(f"[T+{t_idx:03d}] AUTOPILOT: MISSION ABORT EXECUTED -> RTB to FOB Alpha.")
+            log_feed.append(f"[T+{t_idx:03d}] DATALINK_MESH: Swarm handover handshake complete with UAV-02.")
         
         log_html = "<br>".join([f"&gt; {item}" for item in log_feed])
         st.markdown(f"<div class='terminal-box'>{log_html}</div>", unsafe_allow_html=True)
 
     with col_deb:
         st.markdown("<div style='color: #00f0ff; font-weight: bold;'>STANAG 4586 D-BUS PACKET FRAME STREAM</div>", unsafe_allow_html=True)
-        # Synthetic STANAG 4586 hex telemetry representation
         rpm_hex = f"{int(current_row['rpm']):04X}"
         cht_hex = f"{int(current_row['cht_actual'] * 10):04X}"
         alt_hex = f"{int(current_row['altitude_m']):04X}"
@@ -603,8 +557,11 @@ with tab6:
             mime="text/csv"
         )
 
-# Auto-Play Stream Loop Runner
-if st.session_state.is_playing:
+# Loop Execution Handler
+if source_mode == "🔴 LIVE HARDWARE UDP LINK (PORT 14550)":
+    time.sleep(0.5)
+    st.rerun()
+elif st.session_state.is_playing:
     if st.session_state.t_idx < len(df) - 1:
         time.sleep(0.35)
         st.session_state.t_idx += 1
