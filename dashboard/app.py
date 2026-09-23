@@ -25,6 +25,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Background UAV Transmitter Daemon
 class EmbeddedUAVTransmitter:
     _instance = None
 
@@ -120,6 +121,7 @@ class EmbeddedUAVTransmitter:
 
         sock.close()
 
+# State Initialization
 if "boot_complete" not in st.session_state:
     st.session_state.boot_complete = False
 if "viewport_mode" not in st.session_state:
@@ -171,13 +173,20 @@ st.markdown(f"""
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 
 <style>
+    @keyframes ambientBreathe {{
+        0% {{ background-position: 0% 50%, 0 0, 0 0; }}
+        50% {{ background-position: 100% 50%, 14px 14px, 14px 14px; }}
+        100% {{ background-position: 0% 50%, 0 0, 0 0; }}
+    }}
+
     .stApp {{
         background-color: #010409;
         background-image: 
             radial-gradient(ellipse at top, {active_theme['bg_radial1']} 0%, {active_theme['bg_radial2']} 50%, #010409 95%),
             linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
             linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
-        background-size: 100% 100%, 24px 24px, 24px 24px;
+        background-size: 200% 200%, 24px 24px, 24px 24px;
+        animation: ambientBreathe 30s ease infinite;
         color: #e2e8f0;
         font-family: 'Share Tech Mono', monospace;
     }}
@@ -325,7 +334,7 @@ if not st.session_state.boot_complete:
     st.markdown(f"""
     <div style='max-width: 900px; margin: 15px auto; text-align: center;'>
         <div style='font-family: Orbitron; font-size: clamp(1.2rem, 2.2vw, 1.7rem); color: {active_theme['primary']}; font-weight: 900; letter-spacing: 2px; margin-bottom: 4px;'>
-            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v28.0
+            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v29.0
         </div>
         <div style='font-size: 0.78rem; color: #64748b; margin-bottom: 10px;'>
             TACTICAL PROPULSION DIGITAL TWIN GROUND STATION // MALE UAV FLEET
@@ -347,13 +356,13 @@ if not st.session_state.boot_complete:
     st.stop()
 
 # -------------------------------------------------------------
-# 2. MAIN TACTICAL GCS INTERFACE (FLICKER-FREE STABLE LOOP)
+# 2. MAIN TACTICAL GCS INTERFACE
 # -------------------------------------------------------------
 
 st.sidebar.markdown(f"""
 <div style='text-align: center; padding: 6px 0;'>
     <div style='font-family: Orbitron; font-size: 1.15rem; color: {active_theme['primary']}; letter-spacing: 2px;'>AEROTWIN TACTICAL</div>
-    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 28.0.0-PRO</div>
+    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 29.0.0-PRO</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -586,7 +595,7 @@ def make_pfd_figure(pitch, cur_spd, cur_alt, height=170):
     fig_pfd.add_shape(type="circle", x0=-0.5, y0=-0.5, x1=0.5, y1=0.5, line=dict(color="#facc15", width=2))
 
     fig_pfd.update_layout(
-        title={'text': "<b>TACTICAL GLASS PFD</b>", 'font': {'size': 11, 'family': 'Orbitron', 'color': active_theme['primary']}},
+        title={'text": "<b>TACTICAL GLASS PFD</b>", 'font': {'size': 11, 'family': 'Orbitron', 'color': active_theme['primary']}},
         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(8,16,32,0.95)',
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-10, 10]),
         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-10, 10]),
@@ -601,28 +610,28 @@ cur_alt = int(current_row['altitude_m'])
 if not is_mobile:
     pfd_col, g1, g2, g3, g4 = st.columns([1.35, 1, 1, 1, 1])
     with pfd_col:
-        st.plotly_chart(make_pfd_figure(pitch, cur_spd, cur_alt, height=170), use_container_width=True)
+        st.plotly_chart(make_pfd_figure(pitch, cur_spd, cur_alt, height=170), use_container_width=True, config={'displayModeBar': False})
     with g1:
-        st.plotly_chart(make_hud_gauge("HEALTH INDEX", metrics['health_index'], 0, 100, "%", 45, 75, is_invert=True), use_container_width=True)
+        st.plotly_chart(make_hud_gauge("HEALTH INDEX", metrics['health_index'], 0, 100, "%", 45, 75, is_invert=True), use_container_width=True, config={'displayModeBar': False})
     with g2:
-        st.plotly_chart(make_hud_gauge("CYLINDER TEMP", current_row['cht_actual'], 80, 170, "°C", 145, 130), use_container_width=True)
+        st.plotly_chart(make_hud_gauge("CYLINDER TEMP", current_row['cht_actual'], 80, 170, "°C", 145, 130), use_container_width=True, config={'displayModeBar': False})
     with g3:
-        st.plotly_chart(make_hud_gauge("OIL PRESSURE", current_row['oil_press_actual'], 0, 6, "bar", 1.8, 2.5, is_invert=True), use_container_width=True)
+        st.plotly_chart(make_hud_gauge("OIL PRESSURE", current_row['oil_press_actual'], 0, 6, "bar", 1.8, 2.5, is_invert=True), use_container_width=True, config={'displayModeBar': False})
     with g4:
-        st.plotly_chart(make_hud_gauge("CRANKSHAFT", current_row['rpm'], 0, 6000, "RPM", 5600, 5200), use_container_width=True)
+        st.plotly_chart(make_hud_gauge("CRANKSHAFT", current_row['rpm'], 0, 6000, "RPM", 5600, 5200), use_container_width=True, config={'displayModeBar': False})
 else:
-    st.plotly_chart(make_pfd_figure(pitch, cur_spd, cur_alt, height=150), use_container_width=True)
+    st.plotly_chart(make_pfd_figure(pitch, cur_spd, cur_alt, height=150), use_container_width=True, config={'displayModeBar': False})
     mob_row1_col1, mob_row1_col2 = st.columns(2)
     with mob_row1_col1:
-        st.plotly_chart(make_hud_gauge("HEALTH INDEX", metrics['health_index'], 0, 100, "%", 45, 75, is_invert=True, height=150), use_container_width=True)
+        st.plotly_chart(make_hud_gauge("HEALTH INDEX", metrics['health_index'], 0, 100, "%", 45, 75, is_invert=True, height=150), use_container_width=True, config={'displayModeBar': False})
     with mob_row1_col2:
-        st.plotly_chart(make_hud_gauge("CYLINDER TEMP", current_row['cht_actual'], 80, 170, "°C", 145, 130, height=150), use_container_width=True)
+        st.plotly_chart(make_hud_gauge("CYLINDER TEMP", current_row['cht_actual'], 80, 170, "°C", 145, 130, height=150), use_container_width=True, config={'displayModeBar': False})
 
     mob_row2_col1, mob_row2_col2 = st.columns(2)
     with mob_row2_col1:
-        st.plotly_chart(make_hud_gauge("OIL PRESSURE", current_row['oil_press_actual'], 0, 6, "bar", 1.8, 2.5, is_invert=True, height=150), use_container_width=True)
+        st.plotly_chart(make_hud_gauge("OIL PRESSURE", current_row['oil_press_actual'], 0, 6, "bar", 1.8, 2.5, is_invert=True, height=150), use_container_width=True, config={'displayModeBar': False})
     with mob_row2_col2:
-        st.plotly_chart(make_hud_gauge("CRANKSHAFT", current_row['rpm'], 0, 6000, "RPM", 5600, 5200, height=150), use_container_width=True)
+        st.plotly_chart(make_hud_gauge("CRANKSHAFT", current_row['rpm'], 0, 6000, "RPM", 5600, 5200, height=150), use_container_width=True, config={'displayModeBar': False})
 
 if spoofed_flag:
     st.markdown("""
@@ -803,7 +812,7 @@ with tab1:
         fig_cht.add_trace(go.Scatter(x=time_slice, y=df['cht_physics'][:t_idx+1], mode='lines', line=dict(color="#94a3b8", dash="dash", width=2), name="Physics Twin Target"))
         fig_cht.add_hline(y=145.0, line_dash="dot", line_color="#ffb703", annotation_text="Limit (145°C)")
         fig_cht.update_layout(hud_plot_layout, height=plot_h, yaxis_title="°C")
-        st.plotly_chart(fig_cht, use_container_width=True)
+        st.plotly_chart(fig_cht, use_container_width=True, config={'displayModeBar': False})
 
     with col_t2:
         st.markdown(f"<div style='color: {active_theme['accent']}; font-weight: bold;'>LUBRICATION CIRCUIT PRESSURE</div>", unsafe_allow_html=True)
@@ -812,7 +821,7 @@ with tab1:
         fig_oil.add_trace(go.Scatter(x=time_slice, y=df['oil_press_physics'][:t_idx+1], name="Physics Baseline", line=dict(color="#94a3b8", dash="dash", width=2)))
         fig_oil.add_hline(y=1.5, line_dash="dot", line_color="#ff003c", annotation_text="Limit (1.5 bar)")
         fig_oil.update_layout(hud_plot_layout, height=plot_h, yaxis_title="bar")
-        st.plotly_chart(fig_oil, use_container_width=True)
+        st.plotly_chart(fig_oil, use_container_width=True, config={'displayModeBar': False})
 
     st.markdown(f"<div style='color: {active_theme['primary']}; font-weight: bold; margin-top: 10px;'>SUBSYSTEM RESIDUAL ERROR MATRIX</div>", unsafe_allow_html=True)
     matrix_data = [
@@ -861,7 +870,7 @@ with tab2:
         yaxis_title="Total Pressure Ratio Π_c",
         xaxis=dict(range=[0.03, 0.24]), yaxis=dict(range=[1.0, 2.6])
     )
-    st.plotly_chart(fig_turbo, use_container_width=True)
+    st.plotly_chart(fig_turbo, use_container_width=True, config={'displayModeBar': False})
 
 with tab3:
     st.markdown(f"<div style='color: {active_theme['primary']}; font-weight: bold;'>THERMODYNAMIC INDICATOR DIAGRAM (P-V OTTO COMBUSTION CYCLE)</div>", unsafe_allow_html=True)
@@ -901,7 +910,7 @@ with tab3:
             dict(x=v_c + 20, y=p_peak * 0.9, text=f"IMEP: {imep_val} kPa | η_th: {thermal_eff}%", showarrow=False, font=dict(color=active_theme['primary'], size=12))
         ]
     )
-    st.plotly_chart(fig_pv, use_container_width=True)
+    st.plotly_chart(fig_pv, use_container_width=True, config={'displayModeBar': False})
 
 with tab4:
     st.markdown(f"<div style='color: {active_theme['primary']}; font-weight: bold;'>2D ACOUSTIC & VIBRATION WATERFALL SPECTROGRAM (0 - 8 kHz)</div>", unsafe_allow_html=True)
@@ -923,7 +932,7 @@ with tab4:
         colorscale='Viridis', colorbar=dict(title="Energy")
     ))
     fig_waterfall.update_layout(hud_plot_layout, height=plot_h, xaxis_title="MET (Seconds)", yaxis_title="Frequency Band (Hz)")
-    st.plotly_chart(fig_waterfall, use_container_width=True)
+    st.plotly_chart(fig_waterfall, use_container_width=True, config={'displayModeBar': False})
 
 with tab5:
     cols_xai = st.columns([3, 2]) if not is_mobile else [st.container(), st.container()]
@@ -948,7 +957,7 @@ with tab5:
             totals={"marker": {"color": active_theme['primary']}}
         ))
         fig_xai.update_layout(hud_plot_layout, height=plot_h, yaxis_title="Health %")
-        st.plotly_chart(fig_xai, use_container_width=True)
+        st.plotly_chart(fig_xai, use_container_width=True, config={'displayModeBar': False})
 
     with col_xai2:
         st.markdown(f"<div style='color: {active_theme['accent']}; font-weight: bold;'>ONLINE ESTIMATED DEGRADATION PARAMETERS</div>", unsafe_allow_html=True)
@@ -996,7 +1005,7 @@ with tab6:
         ),
         font=dict(family='Share Tech Mono', color='#ffffff'), margin=dict(l=0, r=0, t=20, b=0)
     )
-    st.plotly_chart(fig_3d, use_container_width=True)
+    st.plotly_chart(fig_3d, use_container_width=True, config={'displayModeBar': False})
 
 with tab7:
     st.markdown(f"<div style='color: {active_theme['primary']}; font-weight: bold;'>TACTICAL MULTI-BASE RADAR & AUTONOMOUS SAM THREAT AVOIDANCE</div>", unsafe_allow_html=True)
@@ -1064,7 +1073,7 @@ with tab7:
         ))
 
     fig_radar.update_layout(hud_plot_layout, height=radar_h, xaxis=dict(range=[-35, 55], title="Range X (km)"), yaxis=dict(range=[-25, 45], title="Range Y (km)"))
-    st.plotly_chart(fig_radar, use_container_width=True)
+    st.plotly_chart(fig_radar, use_container_width=True, config={'displayModeBar': False})
 
 with tab8:
     cols_rep = st.columns([3, 2]) if not is_mobile else [st.container(), st.container()]
