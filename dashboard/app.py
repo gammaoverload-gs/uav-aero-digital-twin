@@ -1,9 +1,11 @@
 import os
 import sys
 import time
+import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
 import plotly.graph_objects as go  # type: ignore
 import streamlit as st  # type: ignore
+import streamlit.components.v1 as components  # type: ignore
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -17,7 +19,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Military Tactical HUD Styling
+# Military Tactical HUD Theme
 st.markdown("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -85,7 +87,7 @@ st.markdown("""
         border: 1px solid #00f0ff;
         border-radius: 4px;
         padding: 12px;
-        height: 240px;
+        height: 250px;
         overflow-y: auto;
         font-family: 'Share Tech Mono', monospace;
         font-size: 0.82rem;
@@ -102,17 +104,19 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Session State for Live Playback
+# State initialization
 if "t_idx" not in st.session_state:
     st.session_state.t_idx = 120
 if "is_playing" not in st.session_state:
     st.session_state.is_playing = False
+if "last_voice_alert" not in st.session_state:
+    st.session_state.last_voice_alert = None
 
 # Sidebar Controls
 st.sidebar.markdown("""
 <div style='text-align: center; padding: 5px 0;'>
     <div style='font-family: Orbitron; font-size: 1.15rem; color: #00f0ff; letter-spacing: 2px;'>AEROTWIN TACTICAL</div>
-    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE TELEMETRY NODE // 4.9.0</div>
+    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE TELEMETRY NODE // 5.0.0</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -122,6 +126,8 @@ scenario = st.sidebar.selectbox(
     ["NOMINAL", "COOLING_FAILURE", "LUBRICATION_LOSS"],
     index=1
 )
+
+enable_voice = st.sidebar.checkbox("🔊 Voice HUD Announcements", value=True)
 
 @st.cache_data
 def load_telemetry(scen):
@@ -142,7 +148,6 @@ if col_p2.button("🔄 RESTART"):
     st.session_state.t_idx = 0
     st.session_state.is_playing = False
 
-# Manual Scrubber
 st.session_state.t_idx = st.sidebar.slider(
     "Mission Elapsed Time (Seconds)",
     0, len(df) - 1,
@@ -156,10 +161,10 @@ metrics = prognostics.evaluate_telemetry(current_row)
 st.sidebar.markdown("---")
 st.sidebar.markdown(f"""
 <div style='font-size: 0.78rem; line-height: 1.6; color: #94a3b8;'>
-    <b>CRYPT-KEY:</b> <span style='color: #00ff66;'>AES-256 GCM (ACTIVE)</span><br>
-    <b>DOWNLINK BUS:</b> <span style='color: #00f0ff;'>MIL-STD-1553 / CAN</span><br>
-    <b>STREAM STATUS:</b> {'<span style="color:#00ff66;">STREAMING (50Hz)</span>' if st.session_state.is_playing else '<span style="color:#f59e0b;">SCRUBBER PAUSED</span>'}<br>
-    <b>DOWNLINK PACKET LOSS:</b> 0.00%
+    <b>CRYPT-KEY:</b> <span style='color: #00ff66;'>AES-256 GCM</span><br>
+    <b>BUS PROTOCOL:</b> <span style='color: #00f0ff;'>MIL-STD-1553 / CAN</span><br>
+    <b>SAMPLING RATE:</b> 50 Hz Synchronous<br>
+    <b>FRAME DROPS:</b> 0.00%
 </div>
 """, unsafe_allow_html=True)
 
@@ -169,7 +174,7 @@ st.markdown("<div class='hud-header'>⚡ AEROTWIN: MALE UAV PROPULSION TWIN</div
 st.markdown(f"""
 <div class='telemetry-strip'>
     <div>SYSTEM: <span style='color: #00ff66;'>● SECURE TELEMETRY LINK</span></div>
-    <div>MISSION REGIME: <b>{current_row['flight_phase']}</b></div>
+    <div>REGIME: <b>{current_row['flight_phase']}</b></div>
     <div>ALTITUDE: <b>{current_row['altitude_m']} M</b></div>
     <div>AIRSPEED: <b>115 KCAS</b></div>
     <div>ISA OAT: <b>{round(15 - 0.0065 * current_row['altitude_m'], 1)}°C</b></div>
@@ -177,7 +182,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Tactical Dial Gauges
+# Cockpit Gauges Strip
 g1, g2, g3, g4 = st.columns(4)
 
 def make_hud_gauge(title, value, min_v, max_v, unit, alert_v, warn_v, is_invert=False):
@@ -206,7 +211,7 @@ def make_hud_gauge(title, value, min_v, max_v, unit, alert_v, warn_v, is_invert=
     ))
     fig.update_layout(
         paper_bgcolor='rgba(0,0,0,0)',
-        height=180,
+        height=175,
         margin=dict(l=15, r=15, t=30, b=15),
         font={'family': "Share Tech Mono"}
     )
@@ -243,12 +248,30 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
-# Navigation & Tactical Tabs
-tab1, tab2, tab3, tab4 = st.tabs([
-    "📈 SENSOR BUS & RESIDUALS", 
-    "🛡️ PROPULSION SUBSYSTEM HEATMAP", 
+# Native Web Speech Tactical Voice Announcement
+if enable_voice and metrics["severity"] == "RED" and st.session_state.last_voice_alert != "RED":
+    st.session_state.last_voice_alert = "RED"
+    components.html("""
+    <script>
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        let msg = new SpeechSynthesisUtterance("Critical warning. Propulsion health degraded. Autonomous Return To Base vector initiated.");
+        msg.rate = 1.05;
+        msg.pitch = 0.85;
+        window.speechSynthesis.speak(msg);
+    }
+    </script>
+    """, height=0)
+elif metrics["severity"] != "RED":
+    st.session_state.last_voice_alert = metrics["severity"]
+
+# Tab Navigation
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "📈 SENSOR BUS & RESIDUALS",
+    "🧊 3D PROPULSION CORE MODEL",
+    "⚡ FFT HARMONICS & ENVELOPE",
     "🗺️ TACTICAL RADAR & AUTONOMOUS RTB",
-    "💻 MIL-STD AI CO-PILOT TERMINAL & DEBRIEF"
+    "💻 MIL-STD AI CO-PILOT TERMINAL"
 ])
 
 hud_plot_layout = dict(
@@ -289,7 +312,7 @@ with tab1:
             x=df['timestamp'][:t_idx+1], y=df['oil_press_physics'][:t_idx+1],
             name="Physics Baseline", line=dict(color="#94a3b8", dash="dash", width=2)
         ))
-        fig_oil.add_hline(y=1.5, line_dash="dot", line_color="#ff003c", annotation_text="Cavitation Critical (1.5 bar)")
+        fig_oil.add_hline(y=1.5, line_dash="dot", line_color="#ff003c", annotation_text="Cavitation Limit (1.5 bar)")
         fig_oil.update_layout(hud_plot_layout, height=310, yaxis_title="bar")
         st.plotly_chart(fig_oil, use_container_width=True)
 
@@ -303,157 +326,223 @@ with tab1:
     st.dataframe(pd.DataFrame(matrix_data), use_container_width=True)
 
 with tab2:
-    st.markdown("<div style='color: #00f0ff; font-weight: bold;'>2D PROPULSION CORE THERMAL SCHEMATIC</div>", unsafe_allow_html=True)
+    st.markdown("<div style='color: #00f0ff; font-weight: bold;'>3D ISOMETRIC PROPULSION CORE STRESS MODEL</div>", unsafe_allow_html=True)
+    st.caption("Rotate, pan, and zoom to inspect 3D spatial thermal gradient across individual cylinders and drivetrain assemblies.")
     
     cht_val = current_row['cht_actual']
     oil_p = current_row['oil_press_actual']
-    
-    cyl_color = "#ff003c" if cht_val > 140 else ("#ffb703" if cht_val > 125 else "#00ff66")
-    oil_color = "#ff003c" if oil_p < 1.8 else ("#ffb703" if oil_p < 2.5 else "#00ff66")
-    turbo_color = "#00f0ff" if current_row['map_inhg'] < 40 else "#ffb703"
-    rad_color = "#ff003c" if cht_val > 130 else "#00ff66"
+    cyl_col = "#ff003c" if cht_val > 140 else ("#ffb703" if cht_val > 125 else "#00ff66")
+    oil_col = "#ff003c" if oil_p < 1.8 else ("#ffb703" if oil_p < 2.5 else "#00ff66")
 
-    fig_block = go.Figure()
-    fig_block.add_shape(type="rect", x0=0.6, y0=-0.3, x1=3.4, y1=4.6,
-                        line=dict(color="rgba(0, 240, 255, 0.4)", width=1, dash="dot"),
-                        fillcolor="rgba(10, 20, 35, 0.3)")
+    fig_3d = go.Figure()
 
-    components = [
-        {"name": "CYL 01 [FWD-L]", "x": 1.1, "y": 3.2, "color": cyl_color, "desc": f"CHT: {cht_val}°C"},
-        {"name": "CYL 02 [FWD-R]", "x": 2.9, "y": 3.2, "color": cyl_color, "desc": f"CHT: {cht_val}°C"},
-        {"name": "CYL 03 [AFT-L]", "x": 1.1, "y": 2.0, "color": cyl_color, "desc": f"CHT: {cht_val}°C"},
-        {"name": "CYL 04 [AFT-R]", "x": 2.9, "y": 2.0, "color": cyl_color, "desc": f"CHT: {cht_val}°C"},
-        {"name": "TURBOCHARGER & WASTEGATE", "x": 2.0, "y": 4.1, "color": turbo_color, "desc": f"MAP: {current_row['map_inhg']} inHg"},
-        {"name": "LUBRICATION PUMP & GALLERY", "x": 2.0, "y": 1.1, "color": oil_color, "desc": f"OIL: {oil_p} bar"},
-        {"name": "HEAT EXCHANGER / RADIATOR", "x": 2.0, "y": 0.1, "color": rad_color, "desc": "COOLANT RETURN"}
+    # Crankshaft Axis line
+    fig_3d.add_trace(go.Scatter3d(
+        x=[0, 0], y=[-1.8, 1.8], z=[0, 0],
+        mode="lines",
+        line=dict(color="#00f0ff", width=10),
+        name="Crankshaft Centerline"
+    ))
+
+    # Cylinders 1-4
+    cyl_coords = [
+        {"name": "Cyl 1 [FWD-L]", "x": -1.2, "y": 1.0, "z": 0.4, "temp": cht_val},
+        {"name": "Cyl 2 [FWD-R]", "x": 1.2, "y": 1.0, "z": 0.4, "temp": cht_val},
+        {"name": "Cyl 3 [AFT-L]", "x": -1.2, "y": -1.0, "z": 0.4, "temp": cht_val},
+        {"name": "Cyl 4 [AFT-R]", "x": 1.2, "y": -1.0, "z": 0.4, "temp": cht_val},
     ]
 
-    for c in components:
-        fig_block.add_trace(go.Scatter(
-            x=[c["x"]], y=[c["y"]],
+    for c in cyl_coords:
+        fig_3d.add_trace(go.Scatter3d(
+            x=[c["x"]], y=[c["y"]], z=[c["z"]],
             mode="markers+text",
-            marker=dict(size=56, color=c["color"], symbol="square", line=dict(color="#ffffff", width=1.5)),
-            text=[f"<b>{c['name']}</b><br>{c['desc']}"],
-            textposition="middle center",
-            hoverinfo="text"
+            marker=dict(size=28, color=cyl_col, symbol="square", opacity=0.9),
+            text=[f"<b>{c['name']}</b><br>{c['temp']}°C"],
+            textposition="top center",
+            name=c["name"]
         ))
 
-    fig_block.update_layout(
+    # Turbocharger Spool
+    fig_3d.add_trace(go.Scatter3d(
+        x=[0], y=[-1.6], z=[1.1],
+        mode="markers+text",
+        marker=dict(size=22, color="#00f0ff", symbol="diamond"),
+        text=[f"<b>TURBOCHARGER</b><br>{current_row['map_inhg']} inHg"],
+        textposition="top center",
+        name="Turbo Spool"
+    ))
+
+    # Oil Pump & Sump
+    fig_3d.add_trace(go.Scatter3d(
+        x=[0], y=[0], z=[-0.9],
+        mode="markers+text",
+        marker=dict(size=24, color=oil_col, symbol="circle"),
+        text=[f"<b>OIL GALLERY & SUMP</b><br>{oil_p} bar"],
+        textposition="bottom center",
+        name="Lubrication Circuit"
+    ))
+
+    fig_3d.update_layout(
         paper_bgcolor='rgba(5, 10, 20, 0.6)',
-        plot_bgcolor='rgba(5, 10, 20, 0.6)',
-        font=dict(family='Share Tech Mono', color='#ffffff', size=11),
-        height=480,
-        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[0, 4]),
-        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-0.6, 5]),
-        margin=dict(l=10, r=10, t=10, b=10)
+        height=500,
+        scene=dict(
+            xaxis=dict(showgrid=True, gridcolor='rgba(0, 240, 255, 0.15)', backgroundcolor='rgba(0,0,0,0)', range=[-2, 2]),
+            yaxis=dict(showgrid=True, gridcolor='rgba(0, 240, 255, 0.15)', backgroundcolor='rgba(0,0,0,0)', range=[-2.5, 2.5]),
+            zaxis=dict(showgrid=True, gridcolor='rgba(0, 240, 255, 0.15)', backgroundcolor='rgba(0,0,0,0)', range=[-1.5, 1.8]),
+            camera=dict(eye=dict(x=1.6, y=-1.7, z=1.3))
+        ),
+        font=dict(family='Share Tech Mono', color='#ffffff'),
+        margin=dict(l=0, r=0, t=20, b=0)
     )
-    st.plotly_chart(fig_block, use_container_width=True)
+    st.plotly_chart(fig_3d, use_container_width=True)
 
 with tab3:
-    st.markdown("<div style='color: #00f0ff; font-weight: bold;'>TACTICAL MISSION RADAR & AUTONOMOUS RTB VECTOR</div>", unsafe_allow_html=True)
-    st.caption("Synchronized UAV flight path with automated emergency Return-To-Base (RTB) diversion envelope.")
+    col_f1, col_f2 = st.columns(2)
     
-    # Synthetic Surveillance Orbit Waypoints
+    with col_f1:
+        st.markdown("<div style='color: #00f0ff; font-weight: bold;'>FFT VIBRATION POWER SPECTRAL DENSITY (0 - 8 kHz)</div>", unsafe_allow_html=True)
+        freq_bins = np.linspace(10, 8000, 300)
+        
+        # Engine rotational 1X / 2X harmonics
+        f_engine = current_row['rpm'] / 60.0
+        base_psd = 0.05 / (1 + ((freq_bins - f_engine)/10)**2) + 0.03 / (1 + ((freq_bins - 2*f_engine)/15)**2)
+        noise = np.random.normal(0.005, 0.002, len(freq_bins))
+        psd_total = np.maximum(base_psd + noise, 0.001)
+
+        # Severe knock high-frequency spike (> 5kHz) under detonation
+        if current_row['vibration_rms'] > 1.5:
+            knock_spike = 0.45 / (1 + ((freq_bins - 5800)/120)**2)
+            psd_total += knock_spike
+
+        fig_fft = go.Figure()
+        fig_fft.add_trace(go.Scatter(
+            x=freq_bins, y=psd_total,
+            mode="lines",
+            line=dict(color="#ff0055" if current_row['vibration_rms'] > 1.5 else "#00f0ff", width=2),
+            name="Vibration PSD (G²/Hz)"
+        ))
+        fig_fft.add_vline(x=5800, line_dash="dot", line_color="#ff003c", annotation_text="Detonation Knock Band (5.8 kHz)")
+        fig_fft.update_layout(hud_plot_layout, height=340, xaxis_title="Frequency (Hz)", yaxis_title="PSD (G²/Hz)")
+        st.plotly_chart(fig_fft, use_container_width=True)
+
+    with col_f2:
+        st.markdown("<div style='color: #00ff66; font-weight: bold;'>PROPULSION HEALTH FLIGHT ENVELOPE</div>", unsafe_allow_html=True)
+        
+        categories = ['Thermal Margin', 'Hydrodynamic Press', 'Acoustic Stability', 'Volumetric Eff', 'Turbo Margin', 'ISA Air Density']
+        
+        # Dynamic envelope shrinkage
+        thermal_norm = max(0.1, (170 - current_row['cht_actual']) / 70)
+        oil_norm = min(1.0, current_row['oil_press_actual'] / 4.5)
+        vibe_norm = max(0.1, (3.0 - current_row['vibration_rms']) / 2.0)
+        density_norm = max(0.3, 1.0 - (current_row['altitude_m'] / 10000))
+        
+        current_scores = [thermal_norm, oil_norm, vibe_norm, 0.92, 0.88, density_norm]
+        nominal_scores = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+
+        fig_radar_poly = go.Figure()
+        fig_radar_poly.add_trace(go.Scatterpolar(
+            r=nominal_scores, theta=categories, fill='toself',
+            fillcolor='rgba(0, 240, 255, 0.12)', line=dict(color='#00f0ff', dash='dash'), name='Nominal Envelope'
+        ))
+        fig_radar_poly.add_trace(go.Scatterpolar(
+            r=current_scores, theta=categories, fill='toself',
+            fillcolor='rgba(255, 0, 60, 0.25)' if metrics['severity'] == 'RED' else 'rgba(0, 255, 102, 0.25)',
+            line=dict(color='#ff003c' if metrics['severity'] == 'RED' else '#00ff66', width=2.5),
+            name='Active Envelope'
+        ))
+        fig_radar_poly.update_layout(
+            polar=dict(radialaxis=dict(visible=True, range=[0, 1.1], gridcolor='rgba(0, 240, 255, 0.15)')),
+            paper_bgcolor='rgba(5, 10, 20, 0.6)',
+            font=dict(family='Share Tech Mono', color='#8892b0'),
+            height=340,
+            margin=dict(l=30, r=30, t=30, b=20),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        st.plotly_chart(fig_radar_poly, use_container_width=True)
+
+with tab4:
+    st.markdown("<div style='color: #00f0ff; font-weight: bold;'>TACTICAL MISSION RADAR & AUTONOMOUS RTB VECTOR</div>", unsafe_allow_html=True)
+    
     uav_x = [0, 8, 16, 25, 32, 38, 42, 40, 32, 22, 12, 5, 0]
     uav_y = [0, 6, 12, 18, 22, 22, 15, 6, -2, -6, -4, -1, 0]
     
-    # Interpolate current coordinate along mission path
     norm_idx = int((t_idx / len(df)) * (len(uav_x) - 1))
     cur_x = uav_x[norm_idx]
     cur_y = uav_y[norm_idx]
 
     fig_radar = go.Figure()
-
-    # Radar Rings
     for r in [10, 25, 45]:
         fig_radar.add_shape(type="circle", x0=-r, y0=-r, x1=r, y1=r,
                             line=dict(color="rgba(0, 240, 255, 0.15)", dash="dot", width=1))
 
-    # Flight Path Flown
     fig_radar.add_trace(go.Scatter(
         x=uav_x[:norm_idx+1], y=uav_y[:norm_idx+1],
-        mode="lines+markers",
-        line=dict(color="#00f0ff", width=2.5),
-        marker=dict(size=4, color="#00f0ff"),
-        name="Nominal Patrol Track"
+        mode="lines+markers", line=dict(color="#00f0ff", width=2.5), name="Nominal Patrol Track"
     ))
-
-    # Base FOB Alpha
     fig_radar.add_trace(go.Scatter(
-        x=[0], y=[0],
-        mode="markers+text",
+        x=[0], y=[0], mode="markers+text",
         marker=dict(size=14, color="#00ff66", symbol="triangle-up"),
-        text=["<b>[BASE FOB ALPHA]</b>"],
-        textposition="bottom center",
-        name="Home Base"
+        text=["<b>[BASE FOB ALPHA]</b>"], textposition="bottom center", name="Home Base"
     ))
-
-    # UAV Current Position
     fig_radar.add_trace(go.Scatter(
-        x=[cur_x], y=[cur_y],
-        mode="markers+text",
+        x=[cur_x], y=[cur_y], mode="markers+text",
         marker=dict(size=16, color="#ff0055" if metrics["severity"] == "RED" else "#00f0ff", symbol="diamond"),
-        text=[f"<b>UAV-01 (T+{t_idx}s)</b>"],
-        textposition="top right",
-        name="UAV Vector"
+        text=[f"<b>UAV-01 (T+{t_idx}s)</b>"], textposition="top right", name="UAV Vector"
     ))
 
-    # Autonomous Emergency RTB Vector
     if metrics["severity"] == "RED":
         fig_radar.add_trace(go.Scatter(
-            x=[cur_x, 0], y=[cur_y, 0],
-            mode="lines+text",
+            x=[cur_x, 0], y=[cur_y, 0], mode="lines+text",
             line=dict(color="#ff003c", width=3, dash="dashdot"),
-            text=["", "<b>EMERGENCY RTB VECTOR INITIATED</b>"],
-            textposition="middle right",
-            name="Autonomous RTB Vector"
+            text=["", "<b>AUTONOMOUS RTB DIVERSION ENGAGED</b>"],
+            textposition="middle right", name="Autonomous RTB Vector"
         ))
 
     fig_radar.update_layout(
         paper_bgcolor='rgba(5, 10, 20, 0.6)',
         plot_bgcolor='rgba(5, 10, 20, 0.6)',
         font=dict(family='Share Tech Mono', color='#8892b0'),
-        height=480,
+        height=450,
         xaxis=dict(showgrid=True, gridcolor='rgba(0, 240, 255, 0.08)', range=[-50, 50], title="Sector Range X (km)"),
         yaxis=dict(showgrid=True, gridcolor='rgba(0, 240, 255, 0.08)', range=[-30, 50], title="Sector Range Y (km)"),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
     st.plotly_chart(fig_radar, use_container_width=True)
 
-with tab4:
+with tab5:
     col_log, col_deb = st.columns([3, 2])
     
     with col_log:
         st.markdown("<div style='color: #00f0ff; font-weight: bold;'>MIL-STD AUTONOMOUS AI CO-PILOT TERMINAL LOG</div>", unsafe_allow_html=True)
         
-        # Build dynamic chronological log feed
         log_feed = [
-            f"[T+000] FADEC_BUS: MIL-STD-1553 bus synchronized at 50Hz. All node handshakes OK.",
-            f"[T+015] FADEC_BUS: Airspeed 115 KCAS locked. Climb regime entered.",
-            f"[T+050] THERMAL_CORE: Operating at cruise altitude {current_row['altitude_m']}m ASL. ISA Model initialized."
+            f"[T+000] FADEC_BUS: MIL-STD-1553 bus synchronized at 50Hz. Node handshakes 100%.",
+            f"[T+015] FADEC_BUS: Airspeed 115 KCAS locked. Climb regime initiated.",
+            f"[T+050] THERMAL_CORE: Operating at altitude {current_row['altitude_m']}m. ISA Model online."
         ]
         
         if t_idx >= 75:
-            log_feed.append(f"[T+075] TWIN_CORE: Ambient lapse rate applied: OAT = {round(15 - 0.0065 * current_row['altitude_m'], 1)}°C.")
+            log_feed.append(f"[T+075] TWIN_CORE: Ambient lapse rate: OAT = {round(15 - 0.0065 * current_row['altitude_m'], 1)}°C.")
         if t_idx >= 100:
             if scenario == "COOLING_FAILURE":
                 log_feed.append(f"[T+100] SENSOR_ALERT: CHT drift rate exceeds +0.45°C/s threshold.")
                 log_feed.append(f"[T+108] RESIDUAL_ENGINE: CHT model residual breached (+15.0°C deviation).")
+                log_feed.append(f"[T+115] ACOUSTIC_CORE: Knock harmonic detected at 5.8 kHz frequency band.")
             elif scenario == "LUBRICATION_LOSS":
                 log_feed.append(f"[T+100] SENSOR_ALERT: Oil gallery pressure drop below nominal (e = -1.2 bar).")
         if t_idx >= 120 and metrics["severity"] in ["RED", "AMBER"]:
-            log_feed.append(f"[T+120] PROGNOSTICS_AI: RUL degraded to {metrics['rul_hours']} hrs (Threshold: < 4.0 hrs).")
-            log_feed.append(f"[T+122] AUTOPILOT: MISSION ABORT TRIGGERED. Disengaging loiter orbit.")
+            log_feed.append(f"[T+120] PROGNOSTICS_AI: RUL degraded to {metrics['rul_hours']} hrs (< 4.0 hrs mission buffer).")
+            log_feed.append(f"[T+122] AUTOPILOT: MISSION ABORT EXECUTED. Disengaging loiter orbit.")
             log_feed.append(f"[T+125] AUTOPILOT: Diverting along computed emergency RTB vector to FOB Alpha.")
         
         log_html = "<br>".join([f"&gt; {item}" for item in log_feed])
         st.markdown(f"<div class='terminal-box'>{log_html}</div>", unsafe_allow_html=True)
 
     with col_deb:
-        st.markdown("<div style='color: #00f0ff; font-weight: bold;'>MISSION BLACKBOX EXPORT</div>", unsafe_allow_html=True)
+        st.markdown("<div style='color: #00f0ff; font-weight: bold;'>BLACKBOX DEBRIEF & EXPORT</div>", unsafe_allow_html=True)
         st.markdown(f"""
-        * **Synchronized Window:** `{t_idx}s / {len(df)}s`
-        * **Operating Fault Mode:** `{scenario}`
+        * **Recorded Mission Window:** `{t_idx}s / {len(df)}s`
+        * **Simulated Fault Regime:** `{scenario}`
         * **Subsystem Health Status:** `{metrics['health_index']}%`
         * **Max Recorded CHT:** `{df['cht_actual'][:t_idx+1].max()} °C`
         * **Min Oil Pressure:** `{df['oil_press_actual'][:t_idx+1].min()} bar`
@@ -466,7 +555,7 @@ with tab4:
             mime="text/csv"
         )
 
-# Auto-Play Stream Loop Runner
+# Auto-Play Loop
 if st.session_state.is_playing:
     if st.session_state.t_idx < len(df) - 1:
         time.sleep(0.35)
