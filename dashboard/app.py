@@ -120,192 +120,9 @@ class EmbeddedUAVTransmitter:
 
         sock.close()
 
-# High-Tech Military Cockpit Stylesheet
-st.markdown("""
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Share+Tech+Mono&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
-
-<style>
-    /* Global Tactical Background with Grid Mesh */
-    .stApp {
-        background-color: #030712;
-        background-image: 
-            radial-gradient(circle at 50% 0%, #0d1b2e 0%, #030712 75%, #010409 100%),
-            linear-gradient(rgba(0, 240, 255, 0.025) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0, 240, 255, 0.025) 1px, transparent 1px);
-        background-size: 100% 100%, 28px 28px, 28px 28px;
-        color: #d1d5db;
-        font-family: 'Share Tech Mono', monospace;
-    }
-
-    /* Top Military Header */
-    .hud-header {
-        font-family: 'Orbitron', sans-serif;
-        letter-spacing: 4px;
-        background: linear-gradient(90deg, #00f0ff 0%, #38bdf8 35%, #00ff66 70%, #f59e0b 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-size: 1.95rem;
-        font-weight: 900;
-        margin-bottom: 2px;
-        text-shadow: 0 0 25px rgba(0, 240, 255, 0.35);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    /* Telemetry HUD Status Strip */
-    .telemetry-strip {
-        background: rgba(8, 16, 32, 0.85);
-        border: 1px solid rgba(0, 240, 255, 0.35);
-        border-left: 6px solid #00f0ff;
-        padding: 9px 18px;
-        border-radius: 4px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.86rem;
-        color: #94a3b8;
-        margin-bottom: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), inset 0 0 12px rgba(0, 240, 255, 0.05);
-    }
-    .telemetry-val {
-        color: #ffffff;
-        font-weight: bold;
-        font-family: 'Share Tech Mono', monospace;
-    }
-
-    /* FADEC Dual Lane Redundancy Bar */
-    .fadec-box {
-        background: rgba(6, 12, 24, 0.9);
-        border: 1px solid rgba(0, 240, 255, 0.2);
-        border-radius: 4px;
-        padding: 8px 16px;
-        font-size: 0.77rem;
-        color: #94a3b8;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
-        box-shadow: inset 0 0 8px rgba(0, 240, 255, 0.05);
-    }
-
-    /* Combat Hazard Alert Banner (Diagonal Hazard Stripes) */
-    .alert-banner-critical {
-        background: repeating-linear-gradient(
-            45deg,
-            rgba(127, 29, 29, 0.9),
-            rgba(127, 29, 29, 0.9) 12px,
-            rgba(69, 10, 10, 0.95) 12px,
-            rgba(69, 10, 10, 0.95) 24px
-        );
-        border: 1px solid #ef4444;
-        border-left: 8px solid #dc2626;
-        color: #fecaca;
-        padding: 14px 20px;
-        border-radius: 4px;
-        margin-bottom: 16px;
-        box-shadow: 0 0 30px rgba(239, 68, 68, 0.45);
-        animation: pulseHazard 2s infinite ease-in-out;
-    }
-
-    .alert-banner-nominal {
-        background: rgba(6, 32, 20, 0.85);
-        border: 1px solid #00ff66;
-        border-left: 8px solid #00ff66;
-        color: #a7f3d0;
-        padding: 12px 18px;
-        border-radius: 4px;
-        margin-bottom: 16px;
-        box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);
-    }
-
-    /* Military HUD Tabs Customization */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 6px;
-        background: rgba(4, 9, 20, 0.8);
-        border: 1px solid rgba(0, 240, 255, 0.2);
-        border-radius: 4px;
-        padding: 5px 8px;
-        margin-bottom: 12px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        font-family: 'Orbitron', sans-serif !important;
-        font-size: 0.72rem !important;
-        letter-spacing: 1.2px !important;
-        padding: 7px 14px !important;
-        color: #64748b !important;
-        background: rgba(15, 23, 42, 0.5) !important;
-        border: 1px solid rgba(0, 240, 255, 0.1) !important;
-        border-radius: 3px !important;
-        transition: all 0.25s ease !important;
-    }
-    .stTabs [aria-selected="true"] {
-        color: #00f0ff !important;
-        background: rgba(0, 240, 255, 0.12) !important;
-        border: 1px solid #00f0ff !important;
-        box-shadow: 0 0 14px rgba(0, 240, 255, 0.35) !important;
-    }
-
-    /* Rugged Military Buttons */
-    div.stButton > button {
-        font-family: 'Orbitron', sans-serif !important;
-        font-size: 0.74rem !important;
-        letter-spacing: 1.2px !important;
-        background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(3, 7, 18, 0.95) 100%) !important;
-        color: #38bdf8 !important;
-        border: 1px solid rgba(0, 240, 255, 0.35) !important;
-        border-radius: 3px !important;
-        padding: 8px 16px !important;
-        box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.1), 0 3px 10px rgba(0, 0, 0, 0.6) !important;
-        transition: all 0.2s ease !important;
-    }
-    div.stButton > button:hover {
-        color: #ffffff !important;
-        border-color: #00f0ff !important;
-        box-shadow: 0 0 18px rgba(0, 240, 255, 0.6), inset 0 0 12px rgba(0, 240, 255, 0.25) !important;
-        transform: translateY(-1px);
-    }
-
-    /* Terminal Console */
-    .terminal-box {
-        background: #010409;
-        border: 1px solid #00f0ff;
-        border-radius: 4px;
-        padding: 12px;
-        height: 250px;
-        overflow-y: auto;
-        font-family: 'Share Tech Mono', monospace;
-        font-size: 0.81rem;
-        color: #00ff66;
-        line-height: 1.55;
-        box-shadow: inset 0 0 20px rgba(0, 240, 255, 0.12);
-    }
-
-    /* NATO Incident Card */
-    .nato-card {
-        background: rgba(10, 18, 35, 0.85);
-        border: 1px solid rgba(0, 240, 255, 0.3);
-        border-left: 6px solid #00f0ff;
-        padding: 16px;
-        border-radius: 4px;
-        color: #cbd5e1;
-        font-size: 0.84rem;
-        line-height: 1.75;
-        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
-    }
-
-    /* Pulsing Hazard Animation */
-    @keyframes pulseHazard {
-        0% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.3); }
-        50% { box-shadow: 0 0 35px rgba(239, 68, 68, 0.7); }
-        100% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.3); }
-    }
-</style>
-""", unsafe_allow_html=True)
-
-# State initialization
+# Session State Initialization
+if "boot_complete" not in st.session_state:
+    st.session_state.boot_complete = False
 if "t_idx" not in st.session_state:
     st.session_state.t_idx = 125
 if "is_playing" not in st.session_state:
@@ -327,13 +144,238 @@ if "telemetry_bridge" not in st.session_state:
 
 transmitter_daemon = EmbeddedUAVTransmitter.get_instance()
 
+# Military Cockpit Stylesheet
+st.markdown("""
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+<style>
+    .stApp {
+        background-color: #030712;
+        background-image: 
+            radial-gradient(circle at 50% 0%, #0c1b30 0%, #030712 75%, #010409 100%),
+            linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+        background-size: 100% 100%, 28px 28px, 28px 28px;
+        color: #d1d5db;
+        font-family: 'Share Tech Mono', monospace;
+    }
+
+    .hud-header {
+        font-family: 'Orbitron', sans-serif;
+        letter-spacing: 4px;
+        background: linear-gradient(90deg, #00f0ff 0%, #38bdf8 40%, #00ff66 75%, #f59e0b 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 1.95rem;
+        font-weight: 900;
+        margin-bottom: 2px;
+        text-shadow: 0 0 25px rgba(0, 240, 255, 0.35);
+    }
+
+    .telemetry-strip {
+        background: rgba(8, 16, 32, 0.85);
+        border: 1px solid rgba(0, 240, 255, 0.35);
+        border-left: 6px solid #00f0ff;
+        padding: 9px 18px;
+        border-radius: 4px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.86rem;
+        color: #94a3b8;
+        margin-bottom: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+    }
+    .telemetry-val {
+        color: #ffffff;
+        font-weight: bold;
+    }
+
+    .fadec-box {
+        background: rgba(6, 12, 24, 0.9);
+        border: 1px solid rgba(0, 240, 255, 0.2);
+        border-radius: 4px;
+        padding: 8px 16px;
+        font-size: 0.77rem;
+        color: #94a3b8;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .alert-banner-critical {
+        background: repeating-linear-gradient(
+            45deg,
+            rgba(127, 29, 29, 0.92),
+            rgba(127, 29, 29, 0.92) 14px,
+            rgba(69, 10, 10, 0.96) 14px,
+            rgba(69, 10, 10, 0.96) 28px
+        );
+        border: 1px solid #ef4444;
+        border-left: 8px solid #dc2626;
+        color: #fecaca;
+        padding: 14px 20px;
+        border-radius: 4px;
+        margin-bottom: 16px;
+        box-shadow: 0 0 35px rgba(239, 68, 68, 0.5);
+        animation: pulseHazard 2s infinite ease-in-out;
+    }
+
+    .alert-banner-nominal {
+        background: rgba(6, 32, 20, 0.85);
+        border: 1px solid #00ff66;
+        border-left: 8px solid #00ff66;
+        color: #a7f3d0;
+        padding: 12px 18px;
+        border-radius: 4px;
+        margin-bottom: 16px;
+        box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);
+    }
+
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 6px;
+        background: rgba(4, 9, 20, 0.8);
+        border: 1px solid rgba(0, 240, 255, 0.2);
+        border-radius: 4px;
+        padding: 5px 8px;
+        margin-bottom: 12px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        font-family: 'Orbitron', sans-serif !important;
+        font-size: 0.72rem !important;
+        letter-spacing: 1.2px !important;
+        padding: 7px 14px !important;
+        color: #64748b !important;
+        background: rgba(15, 23, 42, 0.5) !important;
+        border: 1px solid rgba(0, 240, 255, 0.1) !important;
+        border-radius: 3px !important;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #00f0ff !important;
+        background: rgba(0, 240, 255, 0.12) !important;
+        border: 1px solid #00f0ff !important;
+        box-shadow: 0 0 14px rgba(0, 240, 255, 0.35) !important;
+    }
+
+    div.stButton > button {
+        font-family: 'Orbitron', sans-serif !important;
+        font-size: 0.74rem !important;
+        letter-spacing: 1.2px !important;
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(3, 7, 18, 0.95) 100%) !important;
+        color: #38bdf8 !important;
+        border: 1px solid rgba(0, 240, 255, 0.35) !important;
+        border-radius: 3px !important;
+        padding: 8px 16px !important;
+        box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.1) !important;
+    }
+    div.stButton > button:hover {
+        color: #ffffff !important;
+        border-color: #00f0ff !important;
+        box-shadow: 0 0 18px rgba(0, 240, 255, 0.6) !important;
+    }
+
+    .terminal-box {
+        background: #010409;
+        border: 1px solid #00f0ff;
+        border-radius: 4px;
+        padding: 12px;
+        height: 250px;
+        overflow-y: auto;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 0.81rem;
+        color: #00ff66;
+        line-height: 1.55;
+    }
+
+    .nato-card {
+        background: rgba(10, 18, 35, 0.85);
+        border: 1px solid rgba(0, 240, 255, 0.3);
+        border-left: 6px solid #00f0ff;
+        padding: 16px;
+        border-radius: 4px;
+        color: #cbd5e1;
+        font-size: 0.84rem;
+        line-height: 1.75;
+    }
+
+    /* Boot Sequence Container */
+    .boot-container {
+        background: rgba(4, 9, 20, 0.95);
+        border: 1px solid rgba(0, 240, 255, 0.4);
+        border-radius: 6px;
+        padding: 30px 40px;
+        max-width: 850px;
+        margin: 50px auto;
+        box-shadow: 0 0 40px rgba(0, 240, 255, 0.2);
+    }
+    .boot-line {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 0.9rem;
+        line-height: 1.8;
+        color: #94a3b8;
+    }
+    .boot-ok {
+        color: #00ff66;
+        font-weight: bold;
+    }
+
+    @keyframes pulseHazard {
+        0% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.3); }
+        50% { box-shadow: 0 0 35px rgba(239, 68, 68, 0.75); }
+        100% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.3); }
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# -------------------------------------------------------------
+# 1. TACTICAL BOOT / LOADING SEQUENCE SCREEN
+# -------------------------------------------------------------
+if not st.session_state.boot_complete:
+    st.markdown("""
+    <div class='boot-container'>
+        <div style='font-family: Orbitron; font-size: 1.7rem; color: #00f0ff; font-weight: 900; letter-spacing: 3px;'>
+            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v13.0
+        </div>
+        <div style='font-size: 0.8rem; color: #64748b; margin-bottom: 20px;'>
+            TACTICAL PROPULSION DIGITAL TWIN GROUND STATION // MALE UAV FLEET
+        </div>
+        <hr style='border: none; border-bottom: 1px solid rgba(0, 240, 255, 0.2); margin-bottom: 20px;' />
+        <div class='boot-line'>[0.001] BIOS INITIALIZATION: System Clock Synchronized (UTC) ... <span class='boot-ok'>[OK]</span></div>
+        <div class='boot-line'>[0.042] MIL-STD-1553B BUS: Probing Bus Controller & RT-04 FADEC Nodes ... <span class='boot-ok'>[LOCKED (50Hz)]</span></div>
+        <div class='boot-line'>[0.108] THERMODYNAMIC TWIN CORE: Calibrating ISA Lapse Rates & Rotax 915 Maps ... <span class='boot-ok'>[ONLINE]</span></div>
+        <div class='boot-line'>[0.195] EKF KALMAN FILTER: Initializing Q/R Error Covariance Bounds (±2σ) ... <span class='boot-ok'>[ARMED]</span></div>
+        <div class='boot-line'>[0.245] CYBER DEFENSE: Innovation Gating & Sensor Anti-Spoofing Protocols ... <span class='boot-ok'>[ACTIVE]</span></div>
+        <div class='boot-line'>[0.312] ENCRYPTION LAYER: AES-256 GCM Datalink Handshake Verified ... <span class='boot-ok'>[SECURE]</span></div>
+        <div class='boot-line'>[0.401] WEAPON STORES & GLIDE SLOPES: L/D Aerodynamic Polar Loaded ... <span class='boot-ok'>[READY]</span></div>
+        <hr style='border: none; border-bottom: 1px solid rgba(0, 240, 255, 0.2); margin-top: 20px; margin-bottom: 25px;' />
+    </div>
+    """, unsafe_allow_html=True)
+
+    c_b1, c_b2, c_b3 = st.columns([1, 1.5, 1])
+    with c_b2:
+        if st.button("⚡ INITIALIZE FLIGHT MISSION GCS", use_container_width=True):
+            st.session_state.boot_complete = True
+            st.rerun()
+    st.stop()
+
+# -------------------------------------------------------------
+# 2. MAIN TACTICAL GCS INTERFACE
+# -------------------------------------------------------------
+
 # Sidebar: Datalink Configuration
 st.sidebar.markdown("""
 <div style='text-align: center; padding: 6px 0;'>
     <div style='font-family: Orbitron; font-size: 1.12rem; color: #00f0ff; letter-spacing: 2px;'>AEROTWIN TACTICAL</div>
-    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 12.5.0-PRO</div>
+    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 13.0.0-PRO</div>
 </div>
 """, unsafe_allow_html=True)
+
+if st.sidebar.button("🔄 RE-RUN BOOT SEQUENCE"):
+    st.session_state.boot_complete = False
+    st.rerun()
 
 st.sidebar.markdown("---")
 source_mode = st.sidebar.radio(
@@ -425,7 +467,7 @@ else:
     t_idx = st.session_state.t_idx
     current_row = df.iloc[t_idx].copy()
 
-enable_voice = st.sidebar.checkbox("🔊 Voice HUD Announcements", value=True)
+enable_voice = st.sidebar.checkbox("🔊 Military Tactical Voice HUD", value=True)
 
 # Defensive Key Imputation
 safe_keys = {
@@ -495,12 +537,9 @@ pfd_col, g1, g2, g3, g4 = st.columns([1.25, 1, 1, 1, 1])
 with pfd_col:
     pitch = float(current_row['pitch_deg'])
     fig_pfd = go.Figure()
-    # Sky & Ground Rectangles
     fig_pfd.add_shape(type="rect", x0=-10, y0=-10, x1=10, y1=pitch, fillcolor="#78350f", line=dict(width=0))
     fig_pfd.add_shape(type="rect", x0=-10, y0=pitch, x1=10, y1=10, fillcolor="#0369a1", line=dict(width=0))
-    # Horizon Line
     fig_pfd.add_shape(type="line", x0=-8, y0=pitch, x1=8, y1=pitch, line=dict(color="#ffffff", width=2))
-    # Reticle Center Wings
     fig_pfd.add_shape(type="line", x0=-4, y0=0, x1=-1.5, y1=0, line=dict(color="#facc15", width=3))
     fig_pfd.add_shape(type="line", x0=1.5, y0=0, x1=4, y1=0, line=dict(color="#facc15", width=3))
     fig_pfd.add_shape(type="circle", x0=-0.6, y0=-0.6, x1=0.6, y1=0.6, line=dict(color="#facc15", width=2))
@@ -573,17 +612,59 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
-# Voice Synthesizer Hook
+# -------------------------------------------------------------
+# 3. MILITARY CHIME + RADIO AUDIO SYNTHESIZER
+# -------------------------------------------------------------
 if enable_voice and metrics["severity"] == "RED" and st.session_state.last_voice_alert != "RED" and not spoofed_flag:
     st.session_state.last_voice_alert = "RED"
     components.html("""
     <script>
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        let msg = new SpeechSynthesisUtterance("Critical propulsion advisory. Autonomous Threat-Avoidance Return To Base engaged.");
-        msg.rate = 1.05; msg.pitch = 0.85;
-        window.speechSynthesis.speak(msg);
+    // Military Radio Chime & Synthesizer via Web Audio API
+    function playMilitaryRadioAlert() {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+
+            // Tone 1: High alert beep (880Hz)
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = "sine";
+            osc1.frequency.setValueAtTime(880, ctx.currentTime);
+            gain1.gain.setValueAtTime(0.15, ctx.currentTime);
+            gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.start(ctx.currentTime);
+            osc1.stop(ctx.currentTime + 0.08);
+
+            // Tone 2: Secondary chime (1760Hz)
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = "sine";
+            osc2.frequency.setValueAtTime(1760, ctx.currentTime + 0.09);
+            gain2.gain.setValueAtTime(0.18, ctx.currentTime + 0.09);
+            gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.22);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start(ctx.currentTime + 0.09);
+            osc2.stop(ctx.currentTime + 0.22);
+
+            // Voice announcement after chime
+            setTimeout(() => {
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    let msg = new SpeechSynthesisUtterance("Warning. Propulsion core critical. Thermal runaway detected. Autonomous Return To Base vector engaged.");
+                    msg.rate = 1.05;
+                    msg.pitch = 0.88;
+                    window.speechSynthesis.speak(msg);
+                }
+            }, 260);
+        } catch(e) {
+            console.error("Audio synth error:", e);
+        }
     }
+    playMilitaryRadioAlert();
     </script>
     """, height=0)
 elif metrics["severity"] != "RED":
@@ -738,7 +819,7 @@ with tab3:
     fig_pv.add_trace(go.Scatter(x=v_loop, y=p_loop, fill='toself', fillcolor='rgba(255, 0, 60, 0.2)' if metrics['severity'] == "RED" else 'rgba(0, 255, 102, 0.2)',
                                 line=dict(color='#ff003c' if metrics['severity'] == "RED" else '#00ff66', width=3), name="Active Cycle"))
 
-    # Version-safe trapezoidal integration
+    # Version-safe integration (NumPy 1.x & 2.0+ compatible)
     delta_p = p_exp - p_comp
     work_integral = float(np.sum(0.5 * (delta_p[:-1] + delta_p[1:]) * np.diff(v_arr)))
     imep_val = round(work_integral / v_d, 1)
