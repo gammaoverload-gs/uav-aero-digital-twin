@@ -120,102 +120,187 @@ class EmbeddedUAVTransmitter:
 
         sock.close()
 
-# HUD Styling
+# High-Tech Military Cockpit Stylesheet
 st.markdown("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Share+Tech+Mono&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
 
 <style>
+    /* Global Tactical Background with Grid Mesh */
     .stApp {
-        background: radial-gradient(circle at top right, #0d1b2a 0%, #050811 65%, #020408 100%);
-        color: #e0e6ed;
+        background-color: #030712;
+        background-image: 
+            radial-gradient(circle at 50% 0%, #0d1b2e 0%, #030712 75%, #010409 100%),
+            linear-gradient(rgba(0, 240, 255, 0.025) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 240, 255, 0.025) 1px, transparent 1px);
+        background-size: 100% 100%, 28px 28px, 28px 28px;
+        color: #d1d5db;
         font-family: 'Share Tech Mono', monospace;
     }
+
+    /* Top Military Header */
     .hud-header {
         font-family: 'Orbitron', sans-serif;
-        letter-spacing: 3px;
-        background: linear-gradient(90deg, #00f0ff, #7000ff, #00ff66);
+        letter-spacing: 4px;
+        background: linear-gradient(90deg, #00f0ff 0%, #38bdf8 35%, #00ff66 70%, #f59e0b 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-size: 2.05rem;
+        font-size: 1.95rem;
         font-weight: 900;
         margin-bottom: 2px;
-        text-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+        text-shadow: 0 0 25px rgba(0, 240, 255, 0.35);
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
+
+    /* Telemetry HUD Status Strip */
     .telemetry-strip {
-        background: rgba(10, 20, 35, 0.85);
-        border: 1px solid rgba(0, 240, 255, 0.3);
+        background: rgba(8, 16, 32, 0.85);
+        border: 1px solid rgba(0, 240, 255, 0.35);
         border-left: 6px solid #00f0ff;
-        padding: 8px 16px;
+        padding: 9px 18px;
         border-radius: 4px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: 0.88rem;
-        color: #79a8d7;
+        font-size: 0.86rem;
+        color: #94a3b8;
         margin-bottom: 12px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), inset 0 0 12px rgba(0, 240, 255, 0.05);
     }
+    .telemetry-val {
+        color: #ffffff;
+        font-weight: bold;
+        font-family: 'Share Tech Mono', monospace;
+    }
+
+    /* FADEC Dual Lane Redundancy Bar */
     .fadec-box {
-        background: rgba(8, 16, 30, 0.8);
-        border: 1px solid rgba(0, 240, 255, 0.25);
+        background: rgba(6, 12, 24, 0.9);
+        border: 1px solid rgba(0, 240, 255, 0.2);
         border-radius: 4px;
-        padding: 8px 14px;
-        font-size: 0.78rem;
+        padding: 8px 16px;
+        font-size: 0.77rem;
         color: #94a3b8;
         display: flex;
         justify-content: space-between;
+        align-items: center;
         margin-bottom: 15px;
+        box-shadow: inset 0 0 8px rgba(0, 240, 255, 0.05);
     }
+
+    /* Combat Hazard Alert Banner (Diagonal Hazard Stripes) */
     .alert-banner-critical {
-        background: rgba(80, 0, 15, 0.9);
-        border: 1px solid #ff003c;
-        border-left: 8px solid #ff003c;
-        color: #ffb4c4;
+        background: repeating-linear-gradient(
+            45deg,
+            rgba(127, 29, 29, 0.9),
+            rgba(127, 29, 29, 0.9) 12px,
+            rgba(69, 10, 10, 0.95) 12px,
+            rgba(69, 10, 10, 0.95) 24px
+        );
+        border: 1px solid #ef4444;
+        border-left: 8px solid #dc2626;
+        color: #fecaca;
         padding: 14px 20px;
-        border-radius: 6px;
-        margin-bottom: 18px;
-        animation: pulseRed 2s infinite ease-in-out;
-        box-shadow: 0 0 25px rgba(255, 0, 60, 0.35);
+        border-radius: 4px;
+        margin-bottom: 16px;
+        box-shadow: 0 0 30px rgba(239, 68, 68, 0.45);
+        animation: pulseHazard 2s infinite ease-in-out;
     }
+
     .alert-banner-nominal {
-        background: rgba(0, 40, 25, 0.8);
+        background: rgba(6, 32, 20, 0.85);
         border: 1px solid #00ff66;
         border-left: 8px solid #00ff66;
-        color: #a3f7bf;
-        padding: 14px 20px;
-        border-radius: 6px;
-        margin-bottom: 18px;
+        color: #a7f3d0;
+        padding: 12px 18px;
+        border-radius: 4px;
+        margin-bottom: 16px;
         box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);
     }
+
+    /* Military HUD Tabs Customization */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 6px;
+        background: rgba(4, 9, 20, 0.8);
+        border: 1px solid rgba(0, 240, 255, 0.2);
+        border-radius: 4px;
+        padding: 5px 8px;
+        margin-bottom: 12px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        font-family: 'Orbitron', sans-serif !important;
+        font-size: 0.72rem !important;
+        letter-spacing: 1.2px !important;
+        padding: 7px 14px !important;
+        color: #64748b !important;
+        background: rgba(15, 23, 42, 0.5) !important;
+        border: 1px solid rgba(0, 240, 255, 0.1) !important;
+        border-radius: 3px !important;
+        transition: all 0.25s ease !important;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #00f0ff !important;
+        background: rgba(0, 240, 255, 0.12) !important;
+        border: 1px solid #00f0ff !important;
+        box-shadow: 0 0 14px rgba(0, 240, 255, 0.35) !important;
+    }
+
+    /* Rugged Military Buttons */
+    div.stButton > button {
+        font-family: 'Orbitron', sans-serif !important;
+        font-size: 0.74rem !important;
+        letter-spacing: 1.2px !important;
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(3, 7, 18, 0.95) 100%) !important;
+        color: #38bdf8 !important;
+        border: 1px solid rgba(0, 240, 255, 0.35) !important;
+        border-radius: 3px !important;
+        padding: 8px 16px !important;
+        box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.1), 0 3px 10px rgba(0, 0, 0, 0.6) !important;
+        transition: all 0.2s ease !important;
+    }
+    div.stButton > button:hover {
+        color: #ffffff !important;
+        border-color: #00f0ff !important;
+        box-shadow: 0 0 18px rgba(0, 240, 255, 0.6), inset 0 0 12px rgba(0, 240, 255, 0.25) !important;
+        transform: translateY(-1px);
+    }
+
+    /* Terminal Console */
     .terminal-box {
-        background: #020617;
+        background: #010409;
         border: 1px solid #00f0ff;
         border-radius: 4px;
         padding: 12px;
         height: 250px;
         overflow-y: auto;
         font-family: 'Share Tech Mono', monospace;
-        font-size: 0.82rem;
+        font-size: 0.81rem;
         color: #00ff66;
-        line-height: 1.5;
-        box-shadow: inset 0 0 15px rgba(0, 240, 255, 0.1);
+        line-height: 1.55;
+        box-shadow: inset 0 0 20px rgba(0, 240, 255, 0.12);
     }
+
+    /* NATO Incident Card */
     .nato-card {
-        background: rgba(15, 23, 42, 0.8);
+        background: rgba(10, 18, 35, 0.85);
         border: 1px solid rgba(0, 240, 255, 0.3);
         border-left: 6px solid #00f0ff;
-        padding: 15px;
-        border-radius: 5px;
+        padding: 16px;
+        border-radius: 4px;
         color: #cbd5e1;
-        font-size: 0.85rem;
-        line-height: 1.7;
+        font-size: 0.84rem;
+        line-height: 1.75;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
     }
-    @keyframes pulseRed {
-        0% { box-shadow: 0 0 10px rgba(255, 0, 60, 0.3); }
-        50% { box-shadow: 0 0 30px rgba(255, 0, 60, 0.75); }
-        100% { box-shadow: 0 0 10px rgba(255, 0, 60, 0.3); }
+
+    /* Pulsing Hazard Animation */
+    @keyframes pulseHazard {
+        0% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.3); }
+        50% { box-shadow: 0 0 35px rgba(239, 68, 68, 0.7); }
+        100% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.3); }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -244,9 +329,9 @@ transmitter_daemon = EmbeddedUAVTransmitter.get_instance()
 
 # Sidebar: Datalink Configuration
 st.sidebar.markdown("""
-<div style='text-align: center; padding: 5px 0;'>
-    <div style='font-family: Orbitron; font-size: 1.15rem; color: #00f0ff; letter-spacing: 2px;'>AEROTWIN TACTICAL</div>
-    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE TELEMETRY NODE // 12.1.0-PRO</div>
+<div style='text-align: center; padding: 6px 0;'>
+    <div style='font-family: Orbitron; font-size: 1.12rem; color: #00f0ff; letter-spacing: 2px;'>AEROTWIN TACTICAL</div>
+    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 12.5.0-PRO</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -386,11 +471,11 @@ link_label = f"🔴 UDP LIVE BUS (FRAMES: {len(df)})" if source_mode != "MISSION
 st.markdown(f"""
 <div class='telemetry-strip'>
     <div>SYSTEM: <span style='color: #00ff66;'>{link_label}</span></div>
-    <div>REGIME: <b>{current_row['flight_phase']}</b></div>
-    <div>ALTITUDE: <b>{current_row['altitude_m']} M</b></div>
-    <div>AIRSPEED: <b>{115 if not st.session_state.limp_mode else 92} KCAS</b></div>
-    <div>ISA OAT: <b>{round(15 - 0.0065 * current_row['altitude_m'], 1)}°C</b></div>
-    <div>MISSION CLOCK: <b>T+{current_row['timestamp']:03.0f}s</b></div>
+    <div>REGIME: <span class='telemetry-val'>{current_row['flight_phase']}</span></div>
+    <div>ALTITUDE: <span class='telemetry-val'>{current_row['altitude_m']} M</span></div>
+    <div>AIRSPEED: <span class='telemetry-val'>{115 if not st.session_state.limp_mode else 92} KCAS</span></div>
+    <div>ISA OAT: <span class='telemetry-val'>{round(15 - 0.0065 * current_row['altitude_m'], 1)}°C</span></div>
+    <div>MISSION CLOCK: <span class='telemetry-val'>T+{current_row['timestamp']:03.0f}s</span></div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -404,21 +489,24 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# PFD + Gauges
-pfd_col, g1, g2, g3, g4 = st.columns([1.2, 1, 1, 1, 1])
+# Primary Flight Display (PFD) + Cockpit Gauges
+pfd_col, g1, g2, g3, g4 = st.columns([1.25, 1, 1, 1, 1])
 
 with pfd_col:
     pitch = float(current_row['pitch_deg'])
     fig_pfd = go.Figure()
+    # Sky & Ground Rectangles
     fig_pfd.add_shape(type="rect", x0=-10, y0=-10, x1=10, y1=pitch, fillcolor="#78350f", line=dict(width=0))
     fig_pfd.add_shape(type="rect", x0=-10, y0=pitch, x1=10, y1=10, fillcolor="#0369a1", line=dict(width=0))
+    # Horizon Line
     fig_pfd.add_shape(type="line", x0=-8, y0=pitch, x1=8, y1=pitch, line=dict(color="#ffffff", width=2))
-    fig_pfd.add_shape(type="line", x0=-3, y0=0, x1=-1, y1=0, line=dict(color="#facc15", width=3))
-    fig_pfd.add_shape(type="line", x0=1, y0=0, x1=3, y1=0, line=dict(color="#facc15", width=3))
-    fig_pfd.add_shape(type="circle", x0=-0.5, y0=-0.5, x1=0.5, y1=0.5, line=dict(color="#facc15", width=2))
+    # Reticle Center Wings
+    fig_pfd.add_shape(type="line", x0=-4, y0=0, x1=-1.5, y1=0, line=dict(color="#facc15", width=3))
+    fig_pfd.add_shape(type="line", x0=1.5, y0=0, x1=4, y1=0, line=dict(color="#facc15", width=3))
+    fig_pfd.add_shape(type="circle", x0=-0.6, y0=-0.6, x1=0.6, y1=0.6, line=dict(color="#facc15", width=2))
     fig_pfd.update_layout(
         title={'text': "<b>TACTICAL PFD HUD</b>", 'font': {'size': 11, 'family': 'Orbitron', 'color': '#00f0ff'}},
-        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(10,20,35,0.8)',
+        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(8,16,32,0.9)',
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-10, 10]),
         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-10, 10]),
         height=175, margin=dict(l=5, r=5, t=30, b=5)
@@ -429,12 +517,12 @@ def make_hud_gauge(title, value, min_v, max_v, unit, alert_v, warn_v, is_invert=
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
         value=value,
-        title={'text': f"<b>{title}</b>", 'font': {'size': 12, 'family': 'Orbitron', 'color': '#00f0ff'}},
+        title={'text': f"<b>{title}</b>", 'font': {'size': 11, 'family': 'Orbitron', 'color': '#00f0ff'}},
         number={'suffix': f" {unit}", 'font': {'size': 18, 'family': 'Orbitron', 'color': '#ffffff'}},
         gauge={
             'axis': {'range': [min_v, max_v], 'tickwidth': 1, 'tickcolor': "#8892b0"},
-            'bar': {'color': "#00f0ff", 'thickness': 0.25},
-            'bgcolor': "rgba(10, 20, 35, 0.8)",
+            'bar': {'color': "#00f0ff", 'thickness': 0.24},
+            'bgcolor': "rgba(6, 12, 24, 0.9)",
             'borderwidth': 1,
             'bordercolor': "rgba(0, 240, 255, 0.3)",
             'steps': [
@@ -445,7 +533,7 @@ def make_hud_gauge(title, value, min_v, max_v, unit, alert_v, warn_v, is_invert=
             'threshold': {'line': {'color': "#ff003c", 'width': 3}, 'thickness': 0.75, 'value': alert_v}
         }
     ))
-    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', height=175, margin=dict(l=10, r=10, t=30, b=10), font={'family': "Share Tech Mono"})
+    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', height=175, margin=dict(l=8, r=8, t=30, b=8), font={'family': "Share Tech Mono"})
     return fig
 
 with g1:
@@ -460,7 +548,7 @@ with g4:
 # Advisory Banner
 if spoofed_flag:
     st.markdown("""
-    <div style='background: rgba(88, 28, 135, 0.85); border: 1px solid #c084fc; border-left: 8px solid #a855f7; padding: 14px 20px; border-radius: 6px; margin-bottom: 18px;'>
+    <div style='background: rgba(88, 28, 135, 0.9); border: 1px solid #c084fc; border-left: 8px solid #a855f7; padding: 14px 20px; border-radius: 4px; margin-bottom: 16px;'>
         <strong>🛡️ KALMAN INNOVATION GATING ACTIVE:</strong> Sensor anomaly rejected (+45°C spoof spike). Primary flight model retained.
     </div>
     """, unsafe_allow_html=True)
@@ -474,7 +562,7 @@ elif metrics["severity"] == "RED":
     """, unsafe_allow_html=True)
 elif metrics["severity"] == "AMBER":
     st.markdown(f"""
-    <div style='background: rgba(60, 40, 0, 0.75); border-left: 6px solid #ffb703; padding: 12px 18px; border-radius: 4px; margin-bottom: 18px; color: #ffe699;'>
+    <div style='background: rgba(60, 40, 0, 0.85); border-left: 6px solid #ffb703; padding: 12px 18px; border-radius: 4px; margin-bottom: 16px; color: #ffe699;'>
         <strong>CAUTION [DEGRADED PROPULSION]:</strong> {metrics['status']} &nbsp;|&nbsp; {metrics['alert_message']}
     </div>
     """, unsafe_allow_html=True)
@@ -485,15 +573,31 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
+# Voice Synthesizer Hook
+if enable_voice and metrics["severity"] == "RED" and st.session_state.last_voice_alert != "RED" and not spoofed_flag:
+    st.session_state.last_voice_alert = "RED"
+    components.html("""
+    <script>
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        let msg = new SpeechSynthesisUtterance("Critical propulsion advisory. Autonomous Threat-Avoidance Return To Base engaged.");
+        msg.rate = 1.05; msg.pitch = 0.85;
+        window.speechSynthesis.speak(msg);
+    }
+    </script>
+    """, height=0)
+elif metrics["severity"] != "RED":
+    st.session_state.last_voice_alert = metrics["severity"]
+
 # Pilot Mitigation Action Station
-st.markdown("<div style='font-family: Orbitron; font-size: 0.95rem; color: #00f0ff; margin-bottom: 8px;'>🕹️ TACTICAL PILOT MITIGATION & EMERGENCY STORES JETTISON</div>", unsafe_allow_html=True)
+st.markdown("<div style='font-family: Orbitron; font-size: 0.92rem; color: #00f0ff; margin-bottom: 8px;'>🕹️ TACTICAL PILOT MITIGATION & EMERGENCY STORES JETTISON</div>", unsafe_allow_html=True)
 c_mit1, c_mit2, c_mit3, c_mit4 = st.columns(4)
 with c_mit1:
-    if st.button("🚨 " + ("DISENGAGE LIMP-HOME" if st.session_state.limp_mode else "ENGAGE 65% LIMP-HOME THROTTLE")):
+    if st.button("🚨 " + ("DISENGAGE LIMP-HOME" if st.session_state.limp_mode else "ENGAGE 65% LIMP THROTTLE")):
         st.session_state.limp_mode = not st.session_state.limp_mode
         st.rerun()
 with c_mit2:
-    if st.button("💧 " + ("RESTORE FUEL RATIO" if st.session_state.fuel_enrich else "ENRICH MIXTURE (CYLINDER QUENCH)")):
+    if st.button("💧 " + ("RESTORE FUEL RATIO" if st.session_state.fuel_enrich else "ENRICH MIXTURE (QUENCH)")):
         st.session_state.fuel_enrich = not st.session_state.fuel_enrich
         st.rerun()
 with c_mit3:
@@ -520,12 +624,12 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
 ])
 
 hud_plot_layout = dict(
-    paper_bgcolor='rgba(10, 20, 35, 0.4)',
-    plot_bgcolor='rgba(7, 14, 25, 0.7)',
+    paper_bgcolor='rgba(8, 16, 32, 0.65)',
+    plot_bgcolor='rgba(4, 9, 20, 0.85)',
     font=dict(family='Share Tech Mono', color='#8892b0'),
     margin=dict(l=35, r=20, t=30, b=25),
-    xaxis=dict(gridcolor='rgba(0, 240, 255, 0.1)', zerolinecolor='rgba(0, 240, 255, 0.2)'),
-    yaxis=dict(gridcolor='rgba(0, 240, 255, 0.1)', zerolinecolor='rgba(0, 240, 255, 0.2)'),
+    xaxis=dict(gridcolor='rgba(0, 240, 255, 0.08)', zerolinecolor='rgba(0, 240, 255, 0.2)'),
+    yaxis=dict(gridcolor='rgba(0, 240, 255, 0.08)', zerolinecolor='rgba(0, 240, 255, 0.2)'),
     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
 )
 
@@ -634,7 +738,7 @@ with tab3:
     fig_pv.add_trace(go.Scatter(x=v_loop, y=p_loop, fill='toself', fillcolor='rgba(255, 0, 60, 0.2)' if metrics['severity'] == "RED" else 'rgba(0, 255, 102, 0.2)',
                                 line=dict(color='#ff003c' if metrics['severity'] == "RED" else '#00ff66', width=3), name="Active Cycle"))
 
-    # Version-safe trapezoidal integration (NumPy 1.x & 2.0+ compatible)
+    # Version-safe trapezoidal integration
     delta_p = p_exp - p_comp
     work_integral = float(np.sum(0.5 * (delta_p[:-1] + delta_p[1:]) * np.diff(v_arr)))
     imep_val = round(work_integral / v_d, 1)
@@ -733,7 +837,7 @@ with tab6:
     fig_3d.add_trace(go.Scatter3d(x=[0], y=[0], z=[-0.9], mode="markers+text", marker=dict(size=24, color=oil_col, symbol="circle"), text=[f"<b>OIL SUMP</b><br>{oil_p} bar"], textposition="bottom center", name="Oil Gallery"))
 
     fig_3d.update_layout(
-        paper_bgcolor='rgba(5, 10, 20, 0.6)', height=480,
+        paper_bgcolor='rgba(4, 9, 20, 0.85)', height=480,
         scene=dict(
             xaxis=dict(showgrid=True, gridcolor='rgba(0, 240, 255, 0.15)', backgroundcolor='rgba(0,0,0,0)', range=[-2, 2]),
             yaxis=dict(showgrid=True, gridcolor='rgba(0, 240, 255, 0.15)', backgroundcolor='rgba(0,0,0,0)', range=[-2.5, 2.5]),
