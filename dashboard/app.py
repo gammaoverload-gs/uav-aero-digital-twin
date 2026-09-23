@@ -282,11 +282,13 @@ st.markdown(f"""
         border-radius: 4px !important;
         padding: 10px 16px !important;
         min-height: 42px !important;
+        transition: all 0.2s ease !important;
     }}
     div.stButton > button:hover {{
         color: #ffffff !important;
         border-color: {active_theme['primary']} !important;
         box-shadow: 0 0 20px {active_theme['glow']} !important;
+        transform: translateY(-1px);
     }}
 
     .quick-dock {{
@@ -296,6 +298,7 @@ st.markdown(f"""
         border-radius: 6px;
         padding: 14px;
         margin-bottom: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
     }}
 
     .terminal-box {{
@@ -328,13 +331,13 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 1. HYPERREALISTIC SKETCHFAB EMBEDDED 3D DRONE VIEWER
+# 1. WORLD-CLASS SKETCHFAB EMBEDDED 3D DRONE BOOT SCREEN
 # -------------------------------------------------------------
 if not st.session_state.boot_complete:
     st.markdown(f"""
     <div style='max-width: 900px; margin: 20px auto; text-align: center;'>
         <div style='font-family: Orbitron; font-size: clamp(1.3rem, 2.5vw, 1.9rem); color: {active_theme['primary']}; font-weight: 900; letter-spacing: 2px; margin-bottom: 6px;'>
-            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v23.0
+            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v24.0
         </div>
         <div style='font-size: 0.8rem; color: #64748b; margin-bottom: 15px;'>
             HYPERREALISTIC 3D MALE COMBAT UAV DIGITAL TWIN INSPECTION
@@ -342,7 +345,6 @@ if not st.session_state.boot_complete:
     </div>
     """, unsafe_allow_html=True)
 
-    # High-End Sketchfab Embedded MQ-9 Reaper Model Viewer
     components.html("""
     <div class="sketchfab-embed-wrapper" style="width: 100%; height: 420px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(0, 240, 255, 0.4); box-shadow: 0 0 35px rgba(0, 240, 255, 0.25);">
         <iframe title="MQ-9 Reaper Drone" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking" src="https://sketchfab.com/models/89668d90faec4f5195155f10b7548b26/embed?autostart=1&ui_infos=0&ui_watermark=0&ui_controls=1" style="width: 100%; height: 100%;"></iframe>
@@ -360,11 +362,10 @@ if not st.session_state.boot_complete:
 # 2. MAIN TACTICAL GCS INTERFACE
 # -------------------------------------------------------------
 
-# Sidebar Controls
 st.sidebar.markdown(f"""
 <div style='text-align: center; padding: 6px 0;'>
     <div style='font-family: Orbitron; font-size: 1.15rem; color: {active_theme['primary']}; letter-spacing: 2px;'>AEROTWIN TACTICAL</div>
-    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 23.0.0-PRO</div>
+    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 24.0.0-PRO</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -487,7 +488,6 @@ else:
 
 enable_voice = st.sidebar.checkbox("🔊 Military Tactical Voice HUD", value=True)
 
-# Defensive Key Imputation
 safe_keys = {
     "timestamp": 0, "rpm": 5000.0, "cht_actual": 110.0, "cht_physics": 110.0,
     "oil_press_actual": 4.2, "oil_press_physics": 4.2,
@@ -501,13 +501,11 @@ for k, v in safe_keys.items():
     if k not in current_row or pd.isna(current_row[k]):
         current_row[k] = v
 
-# EW Spoofing Logic
 spoofed_flag = False
 if ew_tamper and t_idx > 80:
     current_row['cht_actual'] += 45.0
     spoofed_flag = True
 
-# Pilot Mitigations
 if st.session_state.limp_mode:
     current_row['rpm'] = max(3600, current_row['rpm'] - 800)
     current_row['cht_actual'] = max(current_row['cht_physics'], current_row['cht_actual'] - 11.5)
@@ -524,7 +522,6 @@ if st.session_state.limp_mode or st.session_state.fuel_enrich:
         metrics['severity'] = "AMBER"
         metrics['status'] = "DEGRADED PROPULSION [MITIGATED]"
 
-# Top Header & Annunciator Panel
 zulu_now = datetime.now(timezone.utc).strftime("%H:%M:%SZ")
 
 head_left, head_right = st.columns([3.2, 1.8])
@@ -559,7 +556,6 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Helper function for gauges
 def make_hud_gauge(title, value, min_v, max_v, unit, alert_v, warn_v, is_invert=False, height=170):
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
@@ -640,7 +636,6 @@ else:
     with mob_row2_col2:
         st.plotly_chart(make_hud_gauge("CRANKSHAFT", current_row['rpm'], 0, 6000, "RPM", 5600, 5200, height=150), use_container_width=True)
 
-# Advisory Banner
 if spoofed_flag:
     st.markdown("""
     <div style='background: rgba(88, 28, 135, 0.9); border: 1px solid #c084fc; border-left: 8px solid #a855f7; padding: 14px 20px; border-radius: 4px; margin-bottom: 16px;'>
@@ -668,7 +663,6 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
-# Voice Synthesizer Hook
 if enable_voice and metrics["severity"] == "RED" and st.session_state.last_voice_alert != "RED" and not spoofed_flag:
     st.session_state.last_voice_alert = "RED"
     components.html("""
@@ -716,7 +710,6 @@ if enable_voice and metrics["severity"] == "RED" and st.session_state.last_voice
 elif metrics["severity"] != "RED":
     st.session_state.last_voice_alert = metrics["severity"]
 
-# Touch-Friendly Quick-Action Dock with Audio Click Synthesis
 components.html("""
 <script>
 function playClickSound() {
@@ -767,7 +760,6 @@ with c_mit4:
     st.caption("Status: " + (", ".join(status_mit) if status_mit else "NOMINAL"))
 st.markdown("</div>", unsafe_allow_html=True)
 
-# Emergency Combat Checklist (ECL)
 with st.expander("📋 EMERGENCY COMBAT CHECKLIST (ECL) // MAYDAY DRILL", expanded=(metrics["severity"] == "RED")):
     col_ecl1, col_ecl2 = st.columns(2)
     with col_ecl1:
@@ -793,7 +785,6 @@ hud_plot_layout = dict(
     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
 )
 
-# Navigation Tabs
 tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
     "📈 SENSOR BUS & EKF",
     "🌀 TURBO COMPRESSOR MAP",
@@ -1116,7 +1107,6 @@ with tab8:
         </div>
         """, unsafe_allow_html=True)
 
-# Loop Execution Handler
 if source_mode == "🔴 LIVE HARDWARE UDP LINK (PORT 14550)" and transmitter_daemon.is_running:
     time.sleep(0.5)
     st.rerun()
