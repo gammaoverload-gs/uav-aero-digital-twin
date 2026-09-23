@@ -346,7 +346,6 @@ st.markdown(f"""
 # 1. 3D DRONE HOLOGRAPHIC SCANNER ON BOOT SCREEN
 # -------------------------------------------------------------
 if not st.session_state.boot_complete:
-    # Three.js 3D UAV Model Component
     hex_color = f"#{active_theme['drone_hex']:06x}"
     
     components.html(f"""
@@ -405,38 +404,32 @@ if not st.session_state.boot_complete:
                 opacity: 0.85
             }});
 
-            const solidGlowMat = new THREE.MeshBasicMaterial({{
-                color: {active_theme['drone_hex']},
-                transparent: true,
-                opacity: 0.15
-            }});
-
-            // 1. Fuselage
+            // Fuselage
             const fuseGeo = new THREE.CylinderGeometry(1.2, 0.4, 18, 12);
             fuseGeo.rotateX(Math.PI / 2);
             const fuse = new THREE.Mesh(fuseGeo, wireMat);
             droneGroup.add(fuse);
 
-            // Nose bulb
+            // Nose
             const noseGeo = new THREE.SphereGeometry(1.2, 12, 12);
             noseGeo.scale(1, 1, 1.8);
             const nose = new THREE.Mesh(noseGeo, wireMat);
             nose.position.z = 8.5;
             droneGroup.add(nose);
 
-            // FLIR Camera Gimbal
+            // FLIR Gimbal
             const gimbalGeo = new THREE.SphereGeometry(0.7, 8, 8);
             const gimbal = new THREE.Mesh(gimbalGeo, wireMat);
             gimbal.position.set(0, -1.2, 7.2);
             droneGroup.add(gimbal);
 
-            // 2. High-Aspect Wings
+            // Wings
             const wingGeo = new THREE.BoxGeometry(34, 0.25, 3.2);
             const wings = new THREE.Mesh(wingGeo, wireMat);
             wings.position.set(0, 0.4, 0.5);
             droneGroup.add(wings);
 
-            // 3. V-Tail Stabilizers
+            // V-Tail
             const tailFinGeo = new THREE.BoxGeometry(1.2, 4.2, 0.2);
             const leftFin = new THREE.Mesh(tailFinGeo, wireMat);
             leftFin.position.set(-2.2, 1.8, -8.2);
@@ -450,13 +443,13 @@ if not st.session_state.boot_complete:
             rightFin.rotation.x = -0.3;
             droneGroup.add(rightFin);
 
-            // 4. Rear Pusher Propeller
+            // Pusher Propeller
             const propGeo = new THREE.BoxGeometry(4.8, 0.4, 0.08);
             const prop = new THREE.Mesh(propGeo, new THREE.MeshBasicMaterial({{ color: 0x00ff66 }}));
             prop.position.set(0, 0, -9.2);
             droneGroup.add(prop);
 
-            // 5. Tactical Ground Radar Rings
+            // Radar Ring
             const ringGeo = new THREE.RingGeometry(16, 16.2, 48);
             ringGeo.rotateX(Math.PI / 2);
             const radarRing = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({{
@@ -468,7 +461,7 @@ if not st.session_state.boot_complete:
             radarRing.position.y = -6;
             scene.add(radarRing);
 
-            // 6. Laser Scan Plane
+            // Laser Scan Plane
             const scanGeo = new THREE.PlaneGeometry(36, 1.2);
             scanGeo.rotateX(Math.PI / 2);
             const scanMat = new THREE.MeshBasicMaterial({{
@@ -482,9 +475,8 @@ if not st.session_state.boot_complete:
 
             let scanZ = -10;
             let scanDir = 1;
-
-            // Mouse Interactive Rotation
             let mouseX = 0, mouseY = 0;
+
             document.addEventListener('mousemove', (e) => {{
                 mouseX = (e.clientX - window.innerWidth / 2) * 0.0008;
                 mouseY = (e.clientY - window.innerHeight / 2) * 0.0008;
@@ -492,13 +484,10 @@ if not st.session_state.boot_complete:
 
             function animate() {{
                 requestAnimationFrame(animate);
-
-                // Idle hover & slow yaw
                 droneGroup.rotation.y += 0.007;
                 droneGroup.position.y = Math.sin(Date.now() * 0.002) * 0.4;
-                prop.rotation.z += 0.45; // Propeller spin
+                prop.rotation.z += 0.45;
 
-                // Laser scan sweep
                 scanZ += 0.22 * scanDir;
                 if (scanZ > 10) scanDir = -1;
                 if (scanZ < -10) scanDir = 1;
@@ -506,8 +495,6 @@ if not st.session_state.boot_complete:
                 scanPlane.position.y = droneGroup.position.y;
 
                 radarRing.rotation.z += 0.003;
-
-                // Subtle mouse parallax
                 droneGroup.rotation.x = mouseY * 0.5;
                 droneGroup.rotation.z = -mouseX * 0.5;
 
@@ -528,7 +515,7 @@ if not st.session_state.boot_complete:
     st.markdown(f"""
     <div style='background: rgba(4, 9, 20, 0.95); border: 1px solid {active_theme['primary']}; border-radius: 6px; padding: clamp(16px, 3vw, 30px); max-width: 820px; margin: 10px auto; box-shadow: 0 0 40px {active_theme['glow']};'>
         <div style='font-family: Orbitron; font-size: clamp(1.1rem, 2.2vw, 1.6rem); color: {active_theme['primary']}; font-weight: 900; letter-spacing: 2px;'>
-            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v17.0
+            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v18.0
         </div>
         <div style='font-size: 0.78rem; color: #64748b; margin-bottom: 14px;'>
             TACTICAL PROPULSION DIGITAL TWIN GROUND STATION // MALE UAV FLEET
@@ -561,7 +548,7 @@ if not st.session_state.boot_complete:
 st.sidebar.markdown(f"""
 <div style='text-align: center; padding: 6px 0;'>
     <div style='font-family: Orbitron; font-size: 1.15rem; color: {active_theme['primary']}; letter-spacing: 2px;'>AEROTWIN TACTICAL</div>
-    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 17.0.0-PRO</div>
+    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 18.0.0-PRO</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -811,7 +798,7 @@ pitch = float(current_row['pitch_deg'])
 cur_spd = 115 if not st.session_state.limp_mode else 92
 cur_alt = int(current_row['altitude_m'])
 
-# DYNAMIC RESPONSIVE LAYOUT SWITCHING (DESKTOP vs MOBILE)
+# DYNAMIC RESPONSIVE LAYOUT (DESKTOP vs MOBILE)
 if not is_mobile:
     pfd_col, g1, g2, g3, g4 = st.columns([1.35, 1, 1, 1, 1])
     with pfd_col:
@@ -965,7 +952,7 @@ hud_plot_layout = dict(
     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
 )
 
-# Navigation Tabs (Mobile Touch Swipeable)
+# Navigation Tabs
 tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
     "📈 SENSOR BUS & EKF",
     "🌀 TURBO COMPRESSOR MAP",
@@ -978,7 +965,10 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
 ])
 
 with tab1:
-    col_t1, col_t2 = st.columns(2 if not is_mobile else 1)
+    # Safe 2-column layout (Bug fixed: no 2-from-1 unpack)
+    cols_t = st.columns(2) if not is_mobile else [st.container(), st.container()]
+    col_t1, col_t2 = cols_t[0], cols_t[1]
+
     with col_t1:
         st.markdown(f"<div style='color: {active_theme['primary']}; font-weight: bold;'>CYLINDER HEAD TEMPERATURE (THERMAL RESIDUAL)</div>", unsafe_allow_html=True)
         time_slice = df['timestamp'][:t_idx+1]
@@ -1117,7 +1107,9 @@ with tab4:
     st.plotly_chart(fig_waterfall, use_container_width=True)
 
 with tab5:
-    col_xai1, col_xai2 = st.columns([3, 2] if not is_mobile else [1, 1])
+    cols_xai = st.columns([3, 2]) if not is_mobile else [st.container(), st.container()]
+    col_xai1, col_xai2 = cols_xai[0], cols_xai[1]
+
     with col_xai1:
         st.markdown(f"<div style='color: {active_theme['primary']}; font-weight: bold;'>EXPLAINABLE AI (XAI) ATTRIBUTION WATERFALL</div>", unsafe_allow_html=True)
         cht_penalty = min(45.0, metrics['residuals']['cht_delta'] * 1.8)
@@ -1256,7 +1248,9 @@ with tab7:
     st.plotly_chart(fig_radar, use_container_width=True)
 
 with tab8:
-    col_rep1, col_rep2 = st.columns([3, 2] if not is_mobile else [1, 1])
+    cols_rep = st.columns([3, 2]) if not is_mobile else [st.container(), st.container()]
+    col_rep1, col_rep2 = cols_rep[0], cols_rep[1]
+
     with col_rep1:
         st.markdown(f"<div style='color: {active_theme['primary']}; font-weight: bold;'>MIL-STD-1553B AVIONICS D-BUS PROTOCOL ANALYZER</div>", unsafe_allow_html=True)
         bus_frames = [
