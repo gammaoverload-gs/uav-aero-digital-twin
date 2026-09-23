@@ -570,12 +570,10 @@ with tab2:
     st.markdown("<div style='color: #00f0ff; font-weight: bold;'>TURBOCHARGER COMPRESSOR MAP & DYNAMIC SURGE MARGIN</div>", unsafe_allow_html=True)
     st.caption("Real-time compressor operating point on mass flow vs pressure ratio map with aerodynamic surge boundary.")
 
-    # Compressor Map Grid
     m_flow = np.linspace(0.04, 0.22, 100)
     surge_line = 1.05 + 10.5 * m_flow - 22.0 * (m_flow**2)
     choke_line = 1.0 + 4.2 * m_flow
 
-    # Operating Point
     p_amb = 101.325 * (1 - 0.0000225577 * current_row['altitude_m'])**5.25588
     p_man = current_row['map_inhg'] * 3.38639
     pr_actual = round(max(1.0, p_man / p_amb), 2)
@@ -588,7 +586,6 @@ with tab2:
     fig_turbo.add_trace(go.Scatter(x=m_flow, y=surge_line, mode='lines', line=dict(color='#ff003c', width=3), name="Surge Boundary Limit"))
     fig_turbo.add_trace(go.Scatter(x=m_flow, y=choke_line, mode='lines', line=dict(color='#94a3b8', dash='dash', width=2), name="Choke Limit"))
 
-    # Efficiency contours
     for eff, offset in [(0.75, 0.2), (0.70, 0.4), (0.65, 0.6)]:
         fig_turbo.add_trace(go.Scatter(
             x=m_flow[15:85], y=(surge_line[15:85] - offset),
@@ -596,7 +593,6 @@ with tab2:
             name=f"η_c = {int(eff*100)}%"
         ))
 
-    # Active Operating Dot
     fig_turbo.add_trace(go.Scatter(
         x=[actual_mflow], y=[pr_actual], mode='markers+text',
         marker=dict(size=18, color='#ff003c' if surge_margin_pct < 15.0 else '#00ff66', symbol='diamond', line=dict(color='#ffffff', width=2)),
@@ -625,12 +621,14 @@ with tab3:
     p_peak = (5500.0 * knock_penalty) if metrics['severity'] != "RED" else 3600.0
     p_exp = p_peak * (v_c / v_arr)**gamma
 
+    # Fix: define v_loop and p_loop properly for nominal and active
     v_loop = np.concatenate([v_arr, v_arr[::-1], [v_c]])
     p_loop = np.concatenate([p_comp, p_exp[::-1], [p_comp[0]]])
 
     p_peak_nom = 5500.0
     p_exp_nom = p_peak_nom * (v_c / v_arr)**gamma
     p_loop_nom = np.concatenate([p_comp, p_exp_nom[::-1], [p_comp[0]]])
+    v_loop_nom = v_loop  # Bug fixed here
 
     fig_pv = go.Figure()
     fig_pv.add_trace(go.Scatter(x=v_loop_nom, y=p_loop_nom, mode='lines', line=dict(color='#00f0ff', dash='dash', width=2), name="Nominal Cycle"))
@@ -755,7 +753,6 @@ with tab7:
     cur_x = uav_x[norm_idx]
     cur_y = uav_y[norm_idx]
 
-    # Glide boost when stores jettisoned
     ld_ratio = 15.5 if st.session_state.stores_jettison else 12.0
     glide_limit_km = (current_row['altitude_m'] / 1000.0) * ld_ratio
 
@@ -770,7 +767,6 @@ with tab7:
     for r in [15, 30, 48]:
         fig_radar.add_shape(type="circle", x0=-r, y0=-r, x1=r, y1=r, line=dict(color="rgba(0, 240, 255, 0.15)", dash="dot", width=1))
 
-    # Hostile SAM Threat Dome (X=16, Y=10, Radius=12km)
     sam_x, sam_y, sam_r = 16, 10, 12
     fig_radar.add_shape(
         type="circle", x0=sam_x - sam_r, y0=sam_y - sam_r, x1=sam_x + sam_r, y1=sam_y + sam_r,
@@ -803,7 +799,6 @@ with tab7:
         text=[f"<b>UAV-01 (T+{current_row['timestamp']:.0f}s)</b>"], textposition="top right", name="UAV-01"
     ))
 
-    # Autonomous SAM Avoidance Vector
     if metrics["severity"] == "RED" and not spoofed_flag:
         dogleg_wp_x = 32
         dogleg_wp_y = 2
