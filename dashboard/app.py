@@ -25,7 +25,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Background UAV Transmitter Daemon
 class EmbeddedUAVTransmitter:
     _instance = None
 
@@ -121,7 +120,6 @@ class EmbeddedUAVTransmitter:
 
         sock.close()
 
-# State Initialization
 if "boot_complete" not in st.session_state:
     st.session_state.boot_complete = False
 if "viewport_mode" not in st.session_state:
@@ -327,7 +325,7 @@ if not st.session_state.boot_complete:
     st.markdown(f"""
     <div style='max-width: 900px; margin: 15px auto; text-align: center;'>
         <div style='font-family: Orbitron; font-size: clamp(1.2rem, 2.2vw, 1.7rem); color: {active_theme['primary']}; font-weight: 900; letter-spacing: 2px; margin-bottom: 4px;'>
-            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v27.0
+            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v28.0
         </div>
         <div style='font-size: 0.78rem; color: #64748b; margin-bottom: 10px;'>
             TACTICAL PROPULSION DIGITAL TWIN GROUND STATION // MALE UAV FLEET
@@ -349,13 +347,13 @@ if not st.session_state.boot_complete:
     st.stop()
 
 # -------------------------------------------------------------
-# 2. MAIN TACTICAL GCS INTERFACE
+# 2. MAIN TACTICAL GCS INTERFACE (FLICKER-FREE STABLE LOOP)
 # -------------------------------------------------------------
 
 st.sidebar.markdown(f"""
 <div style='text-align: center; padding: 6px 0;'>
     <div style='font-family: Orbitron; font-size: 1.15rem; color: {active_theme['primary']}; letter-spacing: 2px;'>AEROTWIN TACTICAL</div>
-    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 27.0.0-PRO</div>
+    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 28.0.0-PRO</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -588,7 +586,7 @@ def make_pfd_figure(pitch, cur_spd, cur_alt, height=170):
     fig_pfd.add_shape(type="circle", x0=-0.5, y0=-0.5, x1=0.5, y1=0.5, line=dict(color="#facc15", width=2))
 
     fig_pfd.update_layout(
-        title={'text": "<b>TACTICAL GLASS PFD</b>", 'font': {'size': 11, 'family': 'Orbitron', 'color': active_theme['primary']}},
+        title={'text': "<b>TACTICAL GLASS PFD</b>", 'font': {'size': 11, 'family': 'Orbitron', 'color': active_theme['primary']}},
         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(8,16,32,0.95)',
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-10, 10]),
         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-10, 10]),
