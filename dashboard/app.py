@@ -98,6 +98,8 @@ class EmbeddedUAVTransmitter:
                 "cht_physics": round(cht_model, 2),
                 "oil_press_actual": round(oil_p, 2),
                 "oil_press_physics": round(oil_model, 2),
+                "oil_temp_actual": round(92.0 + (cht - 110.0) * 0.25, 2),
+                "oil_temp_physics": 90.0,
                 "egt_actual": round(810.0 + random.uniform(-4, 4), 1),
                 "egt_physics": 810.0,
                 "map_inhg": round(32.5 + random.uniform(-0.3, 0.3), 2),
@@ -230,14 +232,14 @@ transmitter_daemon = EmbeddedUAVTransmitter.get_instance()
 st.sidebar.markdown("""
 <div style='text-align: center; padding: 5px 0;'>
     <div style='font-family: Orbitron; font-size: 1.15rem; color: #00f0ff; letter-spacing: 2px;'>AEROTWIN TACTICAL</div>
-    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE TELEMETRY NODE // 9.0.0-PRO</div>
+    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE TELEMETRY NODE // 9.5.0-PRO</div>
 </div>
 """, unsafe_allow_html=True)
 
 st.sidebar.markdown("---")
 source_mode = st.sidebar.radio(
     "TELEMETRY INGESTION MODE",
-    ["🔴 LIVE HARDWARE UDP LINK (PORT 14550)", "MISSION REPLAY (SYNTHETIC)"]
+    ["MISSION REPLAY (SYNTHETIC)", "🔴 LIVE HARDWARE UDP LINK (PORT 14550)"]
 )
 
 prognostics = EnginePrognostics()
@@ -275,9 +277,11 @@ if source_mode == "🔴 LIVE HARDWARE UDP LINK (PORT 14550)":
     if len(st.session_state.live_history) == 0:
         df = pd.DataFrame([{
             "timestamp": 0, "rpm": 5000, "cht_actual": 110.0, "cht_physics": 110.0,
-            "oil_press_actual": 4.2, "oil_press_physics": 4.2, "egt_actual": 810.0,
-            "egt_physics": 810.0, "map_inhg": 32.0, "vibration_rms": 1.1,
-            "altitude_m": 1200, "fuel_flow": 24.0, "flight_phase": "STANDBY"
+            "oil_press_actual": 4.2, "oil_press_physics": 4.2,
+            "oil_temp_actual": 92.0, "oil_temp_physics": 90.0,
+            "egt_actual": 810.0, "egt_physics": 810.0, "map_inhg": 32.0,
+            "vibration_rms": 1.1, "altitude_m": 1200, "fuel_flow": 24.0,
+            "flight_phase": "STANDBY"
         }])
         current_row = df.iloc[0].copy()
         t_idx = 0
@@ -321,6 +325,19 @@ else:
     current_row = df.iloc[t_idx].copy()
 
 enable_voice = st.sidebar.checkbox("🔊 Voice HUD Announcements", value=True)
+
+# Defensive Key Imputation (Prevents any KeyError permanently)
+safe_keys = {
+    "timestamp": 0, "rpm": 5000.0, "cht_actual": 110.0, "cht_physics": 110.0,
+    "oil_press_actual": 4.2, "oil_press_physics": 4.2,
+    "oil_temp_actual": 92.0, "oil_temp_physics": 90.0,
+    "egt_actual": 810.0, "egt_physics": 810.0, "map_inhg": 32.0,
+    "vibration_rms": 1.1, "altitude_m": 1200.0, "fuel_flow": 24.0,
+    "flight_phase": "CRUISE"
+}
+for k, v in safe_keys.items():
+    if k not in current_row or pd.isna(current_row[k]):
+        current_row[k] = v
 
 # EW Spoofing Logic
 spoofed_flag = False
