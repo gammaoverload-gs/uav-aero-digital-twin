@@ -173,20 +173,13 @@ st.markdown(f"""
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 
 <style>
-    @keyframes ambientBreathe {{
-        0% {{ background-position: 0% 50%, 0 0, 0 0; }}
-        50% {{ background-position: 100% 50%, 14px 14px, 14px 14px; }}
-        100% {{ background-position: 0% 50%, 0 0, 0 0; }}
-    }}
-
     .stApp {{
         background-color: #010409;
         background-image: 
             radial-gradient(ellipse at top, {active_theme['bg_radial1']} 0%, {active_theme['bg_radial2']} 50%, #010409 95%),
             linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
             linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
-        background-size: 200% 200%, 24px 24px, 24px 24px;
-        animation: ambientBreathe 30s ease infinite;
+        background-size: 100% 100%, 24px 24px, 24px 24px;
         color: #e2e8f0;
         font-family: 'Share Tech Mono', monospace;
     }}
@@ -328,13 +321,13 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 1. ROBUST THREE.JS EMBEDDED HOLOGRAPHIC DRONE BOOT SCREEN
+# 1. BOOT SCREEN: 3D SKETCHFAB EMBEDDED VIEWER
 # -------------------------------------------------------------
 if not st.session_state.boot_complete:
     st.markdown(f"""
     <div style='max-width: 900px; margin: 15px auto; text-align: center;'>
         <div style='font-family: Orbitron; font-size: clamp(1.2rem, 2.2vw, 1.7rem); color: {active_theme['primary']}; font-weight: 900; letter-spacing: 2px; margin-bottom: 4px;'>
-            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v26.0
+            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v27.0
         </div>
         <div style='font-size: 0.78rem; color: #64748b; margin-bottom: 10px;'>
             TACTICAL PROPULSION DIGITAL TWIN GROUND STATION // MALE UAV FLEET
@@ -343,105 +336,10 @@ if not st.session_state.boot_complete:
     """, unsafe_allow_html=True)
 
     components.html("""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <style>
-            body { margin: 0; overflow: hidden; background: #010409; font-family: monospace; }
-            #canvas-wrap { width: 100vw; height: 380px; position: relative; }
-        </style>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    </head>
-    <body>
-        <div id="canvas-wrap"></div>
-        <script>
-            const container = document.getElementById('canvas-wrap');
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.set(0, 12, 32);
-            camera.lookAt(0, 0, 0);
-
-            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            container.appendChild(renderer.domElement);
-
-            const droneGroup = new THREE.Group();
-            scene.add(droneGroup);
-
-            const wireMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true, transparent: true, opacity: 0.9 });
-            const glowMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.2 });
-
-            function addDronePart(geo) {
-                const g = new THREE.Group();
-                g.add(new THREE.Mesh(geo, wireMat));
-                g.add(new THREE.Mesh(geo, glowMat));
-                return g;
-            }
-
-            // Fuselage
-            droneGroup.add(addDronePart(new THREE.CylinderGeometry(1.0, 0.4, 16, 14).rotateX(Math.PI / 2)));
-            
-            // Nose
-            const nose = addDronePart(new THREE.SphereGeometry(1.1, 12, 12));
-            nose.scale.set(0.9, 1, 2.2);
-            nose.position.z = 7.5;
-            droneGroup.add(nose);
-
-            // Wings
-            function makeWing(isLeft) {
-                const sign = isLeft ? -1 : 1;
-                const w = addDronePart(new THREE.BoxGeometry(15, 0.2, 2.4));
-                w.position.set(sign * 8.0, 0.1, 0.3);
-                w.rotation.y = sign * 0.04;
-                w.rotation.z = -sign * 0.03;
-                return w;
-            }
-            droneGroup.add(makeWing(true));
-            droneGroup.add(makeWing(false));
-
-            // V-Tail
-            const tailGeo = new THREE.BoxGeometry(0.18, 3.8, 1.2);
-            const lt = addDronePart(tailGeo); lt.position.set(-1.8, -1.0, -7.8); lt.rotation.z = 0.6; lt.rotation.x = -0.2;
-            droneGroup.add(lt);
-            const rt = addDronePart(tailGeo); rt.position.set(1.8, -1.0, -7.8); rt.rotation.z = -0.6; rt.rotation.x = -0.2;
-            droneGroup.add(rt);
-
-            // Pusher Propeller
-            const propGrp = new THREE.Group();
-            propGrp.position.set(0, 0, -8.6);
-            droneGroup.add(propGrp);
-            const bMat = new THREE.MeshBasicMaterial({ color: 0x00ff66, transparent: true, opacity: 0.85 });
-            for (let i = 0; i < 4; i++) {
-                const b = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.3, 0.04), bMat);
-                b.rotation.z = (Math.PI / 2) * i;
-                propGrp.add(b);
-            }
-
-            // Radar Ring
-            const radar = new THREE.Mesh(
-                new THREE.RingGeometry(14, 14.2, 48).rotateX(Math.PI / 2),
-                new THREE.MeshBasicMaterial({ color: 0x00f0ff, side: THREE.DoubleSide, transparent: true, opacity: 0.3 })
-            );
-            radar.position.y = -5.5;
-            scene.add(radar);
-
-            let rotY = 0;
-            function animate() {
-                requestAnimationFrame(animate);
-                propGrp.rotation.z += 0.6;
-                rotY += 0.007;
-                droneGroup.rotation.y = rotY;
-                droneGroup.position.y = Math.sin(Date.now() * 0.002) * 0.35;
-                radar.rotation.z += 0.003;
-                renderer.render(scene, camera);
-            }
-            animate();
-        </script>
-    </body>
-    </html>
-    """, height=390)
+    <div class="sketchfab-embed-wrapper" style="width: 100%; height: 420px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(0, 240, 255, 0.4); box-shadow: 0 0 35px rgba(0, 240, 255, 0.25);">
+        <iframe title="MQ-9 Reaper Drone" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking" src="https://sketchfab.com/models/89668d90faec4f5195155f10b7548b26/embed?autostart=1&ui_infos=0&ui_watermark=0&ui_controls=1" style="width: 100%; height: 100%;"></iframe>
+    </div>
+    """, height=440)
 
     c_b1, c_b2, c_b3 = st.columns([1, 1.6, 1])
     with c_b2:
@@ -457,7 +355,7 @@ if not st.session_state.boot_complete:
 st.sidebar.markdown(f"""
 <div style='text-align: center; padding: 6px 0;'>
     <div style='font-family: Orbitron; font-size: 1.15rem; color: {active_theme['primary']}; letter-spacing: 2px;'>AEROTWIN TACTICAL</div>
-    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 26.0.0-PRO</div>
+    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 27.0.0-PRO</div>
 </div>
 """, unsafe_allow_html=True)
 
