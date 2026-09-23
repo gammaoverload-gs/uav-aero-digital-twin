@@ -19,7 +19,7 @@ from core.prognostics import EnginePrognostics  # type: ignore
 from core.telemetry_bridge import DroneTelemetryBridge  # type: ignore
 
 st.set_page_config(
-    page_title="AeroTwin Tactical GCS | World-Class Defense Platform",
+    page_title="AeroTwin Tactical GCS | MALE UAV",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -151,90 +151,91 @@ transmitter_daemon = EmbeddedUAVTransmitter.get_instance()
 THEMES = {
     "CYBER CYAN (DEFENSE)": {
         "primary": "#00f0ff", "secondary": "#38bdf8", "accent": "#00ff66",
-        "bg_radial": "#0c1b30", "glow": "rgba(0, 240, 255, 0.35)", "border": "rgba(0, 240, 255, 0.3)"
+        "bg_radial1": "#0c1b30", "bg_radial2": "#051329", "glow": "rgba(0, 240, 255, 0.35)", "border": "rgba(0, 240, 255, 0.3)"
     },
     "NVG PHOSPHOR GREEN (530nm)": {
         "primary": "#00ff66", "secondary": "#4ade80", "accent": "#a7f3d0",
-        "bg_radial": "#062412", "glow": "rgba(0, 255, 102, 0.4)", "border": "rgba(0, 255, 102, 0.3)"
+        "bg_radial1": "#062412", "bg_radial2": "#021609", "glow": "rgba(0, 255, 102, 0.4)", "border": "rgba(0, 255, 102, 0.3)"
     },
     "FLIR COMBAT AMBER (THERMAL)": {
         "primary": "#f59e0b", "secondary": "#fbbf24", "accent": "#fde68a",
-        "bg_radial": "#251203", "glow": "rgba(245, 158, 11, 0.4)", "border": "rgba(245, 158, 11, 0.3)"
+        "bg_radial1": "#251203", "bg_radial2": "#1a0b02", "glow": "rgba(245, 158, 11, 0.4)", "border": "rgba(245, 158, 11, 0.3)"
     }
 }
 
 active_theme = THEMES[st.session_state.hud_theme]
 
-# Tactical CSS
+# Ultra-Modern Responsive & Animated Cockpit Stylesheet
 st.markdown(f"""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com">
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Share+Tech+Mono&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
+    /* Animated Ambient Tactical Grid Background */
+    @keyframes ambientBreathe {{
+        0% {{ background-position: 0% 50%, 0 0, 0 0; }}
+        50% {{ background-position: 100% 50%, 14px 14px, 14px 14px; }}
+        100% {{ background-position: 0% 50%, 0 0, 0 0; }}
+    }}
+
     .stApp {{
-        background-color: #030712;
+        background-color: #020612;
         background-image: 
-            radial-gradient(circle at 50% 0%, {active_theme['bg_radial']} 0%, #030712 75%, #010409 100%),
-            linear-gradient(rgba(0, 240, 255, 0.025) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0, 240, 255, 0.025) 1px, transparent 1px);
-        background-size: 100% 100%, 28px 28px, 28px 28px;
+            radial-gradient(ellipse at top, {active_theme['bg_radial1']} 0%, {active_theme['bg_radial2']} 45%, #020612 90%),
+            linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        background-size: 200% 200%, 30px 30px, 30px 30px;
+        animation: ambientBreathe 35s ease infinite;
         color: #d1d5db;
         font-family: 'Share Tech Mono', monospace;
     }}
 
+    /* Responsive Main Header */
     .hud-header {{
         font-family: 'Orbitron', sans-serif;
-        letter-spacing: 4px;
+        letter-spacing: clamp(1px, 0.6vw, 4px);
         background: linear-gradient(90deg, {active_theme['primary']} 0%, {active_theme['secondary']} 45%, {active_theme['accent']} 85%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-size: 1.95rem;
+        font-size: clamp(1.25rem, 2.3vw, 2.05rem);
         font-weight: 900;
         margin-bottom: 2px;
         text-shadow: 0 0 25px {active_theme['glow']};
     }}
 
+    /* Responsive Telemetry Strip */
     .telemetry-strip {{
-        background: rgba(8, 16, 32, 0.88);
+        background: rgba(8, 16, 32, 0.78);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
         border: 1px solid {active_theme['border']};
-        border-left: 6px solid {active_theme['primary']};
-        padding: 9px 18px;
-        border-radius: 4px;
+        border-left: 5px solid {active_theme['primary']};
+        padding: 8px 14px;
+        border-radius: 6px;
         display: flex;
+        flex-wrap: wrap;
+        gap: 10px 18px;
         justify-content: space-between;
         align-items: center;
-        font-size: 0.86rem;
+        font-size: clamp(0.72rem, 1vw, 0.85rem);
         color: #94a3b8;
         margin-bottom: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.65);
     }}
     .telemetry-val {{
         color: #ffffff;
         font-weight: bold;
     }}
 
-    .fadec-box {{
-        background: rgba(6, 12, 24, 0.92);
-        border: 1px solid {active_theme['border']};
-        border-radius: 4px;
-        padding: 8px 16px;
-        font-size: 0.77rem;
-        color: #94a3b8;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 14px;
-    }}
-
-    /* Fighter Jet Annunciator Box */
+    /* Annunciator Warning Box */
     .annunciator-box {{
-        padding: 4px 14px;
-        border-radius: 3px;
+        padding: 5px 12px;
+        border-radius: 4px;
         font-family: 'Orbitron', sans-serif;
-        font-size: 0.78rem;
+        font-size: clamp(0.68rem, 0.85vw, 0.78rem);
         font-weight: 800;
-        letter-spacing: 2px;
+        letter-spacing: 1.5px;
         display: inline-flex;
         align-items: center;
         gap: 6px;
@@ -242,7 +243,7 @@ st.markdown(f"""
     .annunciator-warn {{
         background: #dc2626;
         color: #ffffff;
-        box-shadow: 0 0 20px rgba(220, 38, 38, 0.8);
+        box-shadow: 0 0 22px rgba(220, 38, 38, 0.85);
         animation: blinkWarn 0.8s infinite alternate;
     }}
     .annunciator-nominal {{
@@ -251,124 +252,100 @@ st.markdown(f"""
         color: #34d399;
     }}
 
-    .alert-banner-critical {{
-        background: repeating-linear-gradient(
-            45deg,
-            rgba(127, 29, 29, 0.92),
-            rgba(127, 29, 29, 0.92) 14px,
-            rgba(69, 10, 10, 0.96) 14px,
-            rgba(69, 10, 10, 0.96) 28px
-        );
-        border: 1px solid #ef4444;
-        border-left: 8px solid #dc2626;
-        color: #fecaca;
-        padding: 14px 20px;
-        border-radius: 4px;
-        margin-bottom: 16px;
-        box-shadow: 0 0 35px rgba(239, 68, 68, 0.5);
-        animation: pulseHazard 2s infinite ease-in-out;
-    }}
-
-    .alert-banner-nominal {{
-        background: rgba(6, 32, 20, 0.85);
-        border: 1px solid #00ff66;
-        border-left: 8px solid #00ff66;
-        color: #a7f3d0;
-        padding: 12px 18px;
-        border-radius: 4px;
-        margin-bottom: 16px;
-        box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);
-    }}
-
+    /* Mobile Responsive Touch-Scrollable Tabs */
     .stTabs [data-baseweb="tab-list"] {{
         gap: 6px;
         background: rgba(4, 9, 20, 0.85);
+        backdrop-filter: blur(12px);
         border: 1px solid {active_theme['border']};
-        border-radius: 4px;
-        padding: 5px 8px;
-        margin-bottom: 12px;
+        border-radius: 6px;
+        padding: 6px;
+        margin-bottom: 14px;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: thin;
+    }}
+    .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar {{
+        height: 4px;
+    }}
+    .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar-thumb {{
+        background: {active_theme['border']};
+        border-radius: 2px;
     }}
     .stTabs [data-baseweb="tab"] {{
         font-family: 'Orbitron', sans-serif !important;
-        font-size: 0.72rem !important;
-        letter-spacing: 1.2px !important;
-        padding: 7px 14px !important;
+        font-size: clamp(0.66rem, 0.8vw, 0.73rem) !important;
+        letter-spacing: 1px !important;
+        padding: 8px 14px !important;
         color: #64748b !important;
         background: rgba(15, 23, 42, 0.5) !important;
         border: 1px solid rgba(255, 255, 255, 0.05) !important;
-        border-radius: 3px !important;
+        border-radius: 4px !important;
+        flex-shrink: 0 !important;
+        transition: all 0.2s ease !important;
     }}
     .stTabs [aria-selected="true"] {{
         color: {active_theme['primary']} !important;
-        background: rgba(0, 240, 255, 0.12) !important;
+        background: rgba(0, 240, 255, 0.15) !important;
         border: 1px solid {active_theme['primary']} !important;
-        box-shadow: 0 0 14px {active_theme['glow']} !important;
+        box-shadow: 0 0 16px {active_theme['glow']} !important;
     }}
 
+    /* Ergonomic Pill Buttons with Haptic Click Feel */
     div.stButton > button {{
         font-family: 'Orbitron', sans-serif !important;
-        font-size: 0.73rem !important;
-        letter-spacing: 1.2px !important;
+        font-size: clamp(0.68rem, 0.82vw, 0.74rem) !important;
+        letter-spacing: 1px !important;
         background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(3, 7, 18, 0.95) 100%) !important;
         color: {active_theme['secondary']} !important;
         border: 1px solid {active_theme['border']} !important;
-        border-radius: 3px !important;
-        padding: 8px 16px !important;
+        border-radius: 4px !important;
+        padding: 10px 16px !important;
+        min-height: 44px !important;
+        transition: all 0.18s ease-in-out !important;
     }}
     div.stButton > button:hover {{
         color: #ffffff !important;
         border-color: {active_theme['primary']} !important;
         box-shadow: 0 0 18px {active_theme['glow']} !important;
+        transform: translateY(-1px);
+    }}
+    div.stButton > button:active {{
+        transform: scale(0.98);
     }}
 
-    .terminal-box {{
-        background: #010409;
-        border: 1px solid {active_theme['primary']};
-        border-radius: 4px;
-        padding: 12px;
-        height: 250px;
-        overflow-y: auto;
-        font-family: 'Share Tech Mono', monospace;
-        font-size: 0.81rem;
-        color: #00ff66;
-        line-height: 1.55;
-    }}
-
-    .nato-card {{
-        background: rgba(10, 18, 35, 0.88);
+    /* Touch Friendly Quick-Dock Container */
+    .quick-dock {{
+        background: rgba(8, 16, 32, 0.85);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
         border: 1px solid {active_theme['border']};
-        border-left: 6px solid {active_theme['primary']};
-        padding: 16px;
-        border-radius: 4px;
-        color: #cbd5e1;
-        font-size: 0.84rem;
-        line-height: 1.75;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 15px;
+        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.6);
     }}
 
-    .boot-container {{
-        background: rgba(4, 9, 20, 0.95);
-        border: 1px solid {active_theme['primary']};
-        border-radius: 6px;
-        padding: 30px 40px;
-        max-width: 850px;
-        margin: 50px auto;
-        box-shadow: 0 0 45px {active_theme['glow']};
-    }}
-    .boot-line {{
-        font-family: 'Share Tech Mono', monospace;
-        font-size: 0.9rem;
-        line-height: 1.8;
-        color: #94a3b8;
+    /* Mobile Layout Tweaks */
+    @media (max-width: 768px) {{
+        .telemetry-strip {{
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+        }}
+        .hud-header {{
+            font-size: 1.35rem;
+        }}
+        .boot-container {{
+            margin: 20px 10px !important;
+            padding: 20px !important;
+        }}
     }}
 
     @keyframes blinkWarn {{
         from {{ opacity: 1; }}
         to {{ opacity: 0.35; }}
-    }}
-    @keyframes pulseHazard {{
-        0% {{ box-shadow: 0 0 15px rgba(239, 68, 68, 0.3); }}
-        50% {{ box-shadow: 0 0 35px rgba(239, 68, 68, 0.75); }}
-        100% {{ box-shadow: 0 0 15px rgba(239, 68, 68, 0.3); }}
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -378,26 +355,28 @@ st.markdown(f"""
 # -------------------------------------------------------------
 if not st.session_state.boot_complete:
     st.markdown(f"""
-    <div class='boot-container'>
-        <div style='font-family: Orbitron; font-size: 1.75rem; color: {active_theme['primary']}; font-weight: 900; letter-spacing: 3px;'>
-            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v14.0
+    <div style='background: rgba(4, 9, 20, 0.95); border: 1px solid {active_theme['primary']}; border-radius: 6px; padding: clamp(20px, 4vw, 40px); max-width: 820px; margin: clamp(20px, 6vh, 60px) auto; box-shadow: 0 0 45px {active_theme['glow']};'>
+        <div style='font-family: Orbitron; font-size: clamp(1.2rem, 2.5vw, 1.75rem); color: {active_theme['primary']}; font-weight: 900; letter-spacing: 2px;'>
+            ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v15.0
         </div>
-        <div style='font-size: 0.8rem; color: #64748b; margin-bottom: 20px;'>
+        <div style='font-size: 0.78rem; color: #64748b; margin-bottom: 18px;'>
             TACTICAL PROPULSION DIGITAL TWIN GROUND STATION // MALE UAV FLEET
         </div>
-        <hr style='border: none; border-bottom: 1px solid rgba(255, 255, 255, 0.15); margin-bottom: 20px;' />
-        <div class='boot-line'>[0.001] BIOS INITIALIZATION: System Clock Synchronized (UTC/ZULU) ... <span style='color:#00ff66;'>[OK]</span></div>
-        <div class='boot-line'>[0.042] MIL-STD-1553B D-BUS: BC & RT-04 FADEC Telemetry Bus ... <span style='color:#00ff66;'>[LOCKED (50Hz)]</span></div>
-        <div class='boot-line'>[0.108] THERMODYNAMIC TWIN CORE: Calibrating Rotax 915 MVEM & ISA Maps ... <span style='color:#00ff66;'>[ONLINE]</span></div>
-        <div class='boot-line'>[0.195] EKF KALMAN FILTER: Initializing Q/R Covariance Bounds (±2σ) ... <span style='color:#00ff66;'>[ARMED]</span></div>
-        <div class='boot-line'>[0.245] CYBER DEFENSE: Anti-Spoofing Innovation Gating ... <span style='color:#00ff66;'>[ACTIVE]</span></div>
-        <div class='boot-line'>[0.312] ENCRYPTED DATALINK: AES-256 GCM Handshake Confirmed ... <span style='color:#00ff66;'>[SECURE]</span></div>
-        <div class='boot-line'>[0.401] WEAPON STORES & GLIDE SLOPES: Aerodynamic Polar Model Loaded ... <span style='color:#00ff66;'>[READY]</span></div>
-        <hr style='border: none; border-bottom: 1px solid rgba(255, 255, 255, 0.15); margin-top: 20px; margin-bottom: 25px;' />
+        <hr style='border: none; border-bottom: 1px solid rgba(255, 255, 255, 0.12); margin-bottom: 18px;' />
+        <div style='font-family: Share Tech Mono; font-size: clamp(0.78rem, 1vw, 0.88rem); line-height: 1.8; color: #94a3b8;'>
+            <div>[0.001] BIOS INITIALIZATION: System Clock Synchronized (UTC/ZULU) ... <span style='color:#00ff66;'>[OK]</span></div>
+            <div>[0.042] MIL-STD-1553B D-BUS: BC & RT-04 FADEC Telemetry Bus ... <span style='color:#00ff66;'>[LOCKED (50Hz)]</span></div>
+            <div>[0.108] THERMODYNAMIC TWIN CORE: Calibrating Rotax 915 MVEM & ISA Maps ... <span style='color:#00ff66;'>[ONLINE]</span></div>
+            <div>[0.195] EKF KALMAN FILTER: Initializing Q/R Covariance Bounds (±2σ) ... <span style='color:#00ff66;'>[ARMED]</span></div>
+            <div>[0.245] CYBER DEFENSE: Anti-Spoofing Innovation Gating ... <span style='color:#00ff66;'>[ACTIVE]</span></div>
+            <div>[0.312] ENCRYPTED DATALINK: AES-256 GCM Handshake Confirmed ... <span style='color:#00ff66;'>[SECURE]</span></div>
+            <div>[0.401] WEAPON STORES & GLIDE SLOPES: Aerodynamic Polar Model Loaded ... <span style='color:#00ff66;'>[READY]</span></div>
+        </div>
+        <hr style='border: none; border-bottom: 1px solid rgba(255, 255, 255, 0.12); margin-top: 18px; margin-bottom: 22px;' />
     </div>
     """, unsafe_allow_html=True)
 
-    c_b1, c_b2, c_b3 = st.columns([1, 1.5, 1])
+    c_b1, c_b2, c_b3 = st.columns([1, 1.6, 1])
     with c_b2:
         if st.button("⚡ INITIALIZE FLIGHT MISSION GCS", use_container_width=True):
             st.session_state.boot_complete = True
@@ -412,11 +391,10 @@ if not st.session_state.boot_complete:
 st.sidebar.markdown(f"""
 <div style='text-align: center; padding: 6px 0;'>
     <div style='font-family: Orbitron; font-size: 1.15rem; color: {active_theme['primary']}; letter-spacing: 2px;'>AEROTWIN TACTICAL</div>
-    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 14.0.0-PRO</div>
+    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE GCS // NODE 15.0.0-PRO</div>
 </div>
 """, unsafe_allow_html=True)
 
-# Theme Selector
 selected_theme = st.sidebar.selectbox(
     "OPTICAL SPECTRUM HUD THEME",
     list(THEMES.keys()),
@@ -559,53 +537,41 @@ if st.session_state.limp_mode or st.session_state.fuel_enrich:
         metrics['severity'] = "AMBER"
         metrics['status'] = "DEGRADED PROPULSION [MITIGATED]"
 
-# Top Military Cockpit Header & Annunciator Panel
+# Top Header & Annunciator Panel
 zulu_now = datetime.now(timezone.utc).strftime("%H:%M:%SZ")
 
-head_left, head_right = st.columns([3.5, 1.5])
+head_left, head_right = st.columns([3.2, 1.8])
 with head_left:
     st.markdown("<div class='hud-header'>⚡ AEROTWIN: MALE UAV PROPULSION TWIN</div>", unsafe_allow_html=True)
 with head_right:
     annunc_class = "annunciator-warn" if metrics["severity"] == "RED" and not st.session_state.caution_silenced else "annunciator-nominal"
     annunc_text = "⚠️ MASTER WARNING" if metrics["severity"] == "RED" else ("⚡ MASTER CAUTION" if metrics["severity"] == "AMBER" else "✓ PROPULSION NOMINAL")
     
-    st.markdown(f"""
-    <div style='text-align: right; padding-top: 8px;'>
-        <span class='annunciator-box {annunc_class}'>{annunc_text}</span>
-    </div>
-    """, unsafe_allow_html=True)
-    if metrics["severity"] == "RED":
-        if st.button("🔕 SILENCE / ACK ALARM", use_container_width=True):
-            st.session_state.caution_silenced = True
-            st.rerun()
+    col_a1, col_a2 = st.columns([1.8, 1.2])
+    with col_a1:
+        st.markdown(f"<div style='text-align: right; padding-top: 5px;'><span class='annunciator-box {annunc_class}'>{annunc_text}</span></div>", unsafe_allow_html=True)
+    with col_a2:
+        if metrics["severity"] == "RED":
+            if st.button("🔕 ACK", use_container_width=True):
+                st.session_state.caution_silenced = True
+                st.rerun()
 
 link_label = f"🔴 UDP BUS ({len(df)} FRAMES)" if source_mode != "MISSION REPLAY (SYNTHETIC)" else "● REPLAY ENCRYPTED"
-squawk_status = "<span style='color:#ef4444; font-weight:bold;'>7700 [EMERGENCY]</span>" if metrics["severity"] == "RED" else "<span style='color:#10b981;'>4421 [COMBAT CAP]</span>"
+squawk_status = "<span style='color:#ef4444; font-weight:bold;'>7700 [EMERGENCY]</span>" if metrics["severity"] == "RED" else "<span style='color:#10b981;'>4421 [CAP]</span>"
 
 st.markdown(f"""
 <div class='telemetry-strip'>
     <div>ZULU: <span class='telemetry-val'>{zulu_now}</span></div>
-    <div>GRID: <span class='telemetry-val'>43R FM 9241 1802</span></div>
     <div>IFF SQUAWK: {squawk_status}</div>
     <div>REGIME: <span class='telemetry-val'>{current_row['flight_phase']}</span></div>
     <div>ALT: <span class='telemetry-val'>{current_row['altitude_m']} M</span></div>
     <div>AIRSPEED: <span class='telemetry-val'>{115 if not st.session_state.limp_mode else 92} KCAS</span></div>
     <div>ISA OAT: <span class='telemetry-val'>{round(15 - 0.0065 * current_row['altitude_m'], 1)}°C</span></div>
-    <div>CLOCK: <span class='telemetry-val'>T+{current_row['timestamp']:03.0f}s</span></div>
+    <div>MISSION CLOCK: <span class='telemetry-val'>T+{current_row['timestamp']:03.0f}s</span></div>
 </div>
 """, unsafe_allow_html=True)
 
-# Dual-Channel FADEC Strip
-lane_b_status = "HOT STANDBY" if metrics["severity"] != "RED" else "FAILOVER ARMED"
-st.markdown(f"""
-<div class='fadec-box'>
-    <div>FADEC PRIMARY [LANE A]: <span style='color: #00ff66;'>ONLINE (28.2V DC)</span> | CPU: 12% | BER: 0.00%</div>
-    <div>FADEC BACKUP [LANE B]: <span style='color: {active_theme['primary']};'>{lane_b_status} (28.1V DC)</span> | CAN-2: SYNC</div>
-    <div>MIL-STD-1553B: <span style='color: #00ff66;'>BC-RT04 DUAL D-BUS NOMINAL</span></div>
-</div>
-""", unsafe_allow_html=True)
-
-# World-Class Glass Cockpit PFD (Speed & Altitude Tapes + Horizon)
+# Glass Cockpit PFD (Speed & Altitude Tapes + Horizon) + Gauges
 pfd_col, g1, g2, g3, g4 = st.columns([1.35, 1, 1, 1, 1])
 
 with pfd_col:
@@ -614,24 +580,20 @@ with pfd_col:
     cur_alt = int(current_row['altitude_m'])
 
     fig_pfd = go.Figure()
-    # Sky and Ground
     fig_pfd.add_shape(type="rect", x0=-8, y0=-10, x1=8, y1=pitch, fillcolor="#78350f", line=dict(width=0))
     fig_pfd.add_shape(type="rect", x0=-8, y0=pitch, x1=8, y1=10, fillcolor="#0369a1", line=dict(width=0))
-    # Horizon line
     fig_pfd.add_shape(type="line", x0=-6, y0=pitch, x1=6, y1=pitch, line=dict(color="#ffffff", width=2))
-    # Pitch ladder ticks (+5, -5)
     fig_pfd.add_shape(type="line", x0=-2, y0=pitch + 3, x1=2, y1=pitch + 3, line=dict(color="rgba(255,255,255,0.7)", width=1.5))
     fig_pfd.add_shape(type="line", x0=-2, y0=pitch - 3, x1=2, y1=pitch - 3, line=dict(color="rgba(255,255,255,0.7)", width=1.5, dash="dot"))
 
-    # Airspeed Vertical Tape (Left)
+    # Airspeed Tape (Left)
     fig_pfd.add_shape(type="rect", x0=-10, y0=-10, x1=-7.5, y1=10, fillcolor="rgba(8,16,32,0.9)", line=dict(color=active_theme['border'], width=1))
     fig_pfd.add_annotation(x=-8.75, y=0, text=f"<b>{cur_spd}</b><br><span style='font-size:9px'>KCAS</span>", showarrow=False, font=dict(color="#00ff66", size=11, family="Orbitron"))
 
-    # Altitude Vertical Tape (Right)
+    # Altitude Tape (Right)
     fig_pfd.add_shape(type="rect", x0=7.5, y0=-10, x1=10, y1=10, fillcolor="rgba(8,16,32,0.9)", line=dict(color=active_theme['border'], width=1))
     fig_pfd.add_annotation(x=8.75, y=0, text=f"<b>{cur_alt}</b><br><span style='font-size:9px'>M</span>", showarrow=False, font=dict(color="#00f0ff", size=11, family="Orbitron"))
 
-    # Aircraft Center Symbol
     fig_pfd.add_shape(type="line", x0=-3.5, y0=0, x1=-1.2, y1=0, line=dict(color="#facc15", width=3))
     fig_pfd.add_shape(type="line", x0=1.2, y0=0, x1=3.5, y1=0, line=dict(color="#facc15", width=3))
     fig_pfd.add_shape(type="circle", x0=-0.5, y0=-0.5, x1=0.5, y1=0.5, line=dict(color="#facc15", width=2))
@@ -686,7 +648,7 @@ if spoofed_flag:
     """, unsafe_allow_html=True)
 elif metrics["severity"] == "RED":
     st.markdown(f"""
-    <div class='alert-banner-critical'>
+    <div style='background: repeating-linear-gradient(45deg, rgba(127,29,29,0.92), rgba(127,29,29,0.92) 14px, rgba(69,10,10,0.96) 14px, rgba(69,10,10,0.96) 28px); border: 1px solid #ef4444; border-left: 8px solid #dc2626; color: #fecaca; padding: 14px 20px; border-radius: 4px; margin-bottom: 16px;'>
         <strong>⚠️ CRITICAL TACTICAL ADVISORY [AUTONOMOUS THREAT-AVOIDANCE RTB ACTIVE]</strong><br>
         <strong>Fault Mode:</strong> {metrics['status']} &nbsp;|&nbsp; <strong>Root Cause:</strong> {metrics['alert_message']}<br>
         <strong>Remaining Flight Endurance (RUL):</strong> {metrics['rul_hours']} Hours
@@ -753,29 +715,31 @@ if enable_voice and metrics["severity"] == "RED" and st.session_state.last_voice
 elif metrics["severity"] != "RED":
     st.session_state.last_voice_alert = metrics["severity"]
 
-# Emergency Pilot Mitigation Station
-st.markdown(f"<div style='font-family: Orbitron; font-size: 0.92rem; color: {active_theme['primary']}; margin-bottom: 8px;'>🕹️ TACTICAL PILOT MITIGATION & EMERGENCY STORES JETTISON</div>", unsafe_allow_html=True)
+# Touch-Friendly Quick-Action Dock (Like iOS/Android Floating Command Bar)
+st.markdown("<div class='quick-dock'>", unsafe_allow_html=True)
+st.markdown(f"<div style='font-family: Orbitron; font-size: 0.88rem; color: {active_theme['primary']}; margin-bottom: 8px;'>🕹️ COMBAT PILOT QUICK-ACTION DOCK</div>", unsafe_allow_html=True)
 c_mit1, c_mit2, c_mit3, c_mit4 = st.columns(4)
 with c_mit1:
-    if st.button("🚨 " + ("DISENGAGE LIMP-HOME" if st.session_state.limp_mode else "ENGAGE 65% LIMP THROTTLE")):
+    if st.button("🚨 " + ("DISENGAGE LIMP-HOME" if st.session_state.limp_mode else "65% LIMP-HOME THROTTLE"), use_container_width=True):
         st.session_state.limp_mode = not st.session_state.limp_mode
         st.rerun()
 with c_mit2:
-    if st.button("💧 " + ("RESTORE FUEL RATIO" if st.session_state.fuel_enrich else "ENRICH MIXTURE (QUENCH)")):
+    if st.button("💧 " + ("RESTORE MIXTURE" if st.session_state.fuel_enrich else "ENRICH QUENCH"), use_container_width=True):
         st.session_state.fuel_enrich = not st.session_state.fuel_enrich
         st.rerun()
 with c_mit3:
-    if st.button("💥 " + ("JETTISON ACTIVE (-250kg)" if st.session_state.stores_jettison else "JETTISON UNDERWING STORES")):
+    if st.button("💥 " + ("JETTISON ACTIVE (-250kg)" if st.session_state.stores_jettison else "JETTISON UNDERWING STORES"), use_container_width=True):
         st.session_state.stores_jettison = not st.session_state.stores_jettison
         st.rerun()
 with c_mit4:
     status_mit = []
-    if st.session_state.limp_mode: status_mit.append("LIMP-HOME (-800 RPM)")
-    if st.session_state.fuel_enrich: status_mit.append("QUENCH (-6°C CHT)")
-    if st.session_state.stores_jettison: status_mit.append("STORES JETTISONED (+14km GLIDE)")
-    st.caption("Active Mitigations: " + (", ".join(status_mit) if status_mit else "NONE (NOMINAL CRUISE)"))
+    if st.session_state.limp_mode: status_mit.append("LIMP ACTIVE")
+    if st.session_state.fuel_enrich: status_mit.append("QUENCH ON")
+    if st.session_state.stores_jettison: status_mit.append("STORES JETTISONED")
+    st.caption("Active Status: " + (", ".join(status_mit) if status_mit else "NOMINAL PATROL"))
+st.markdown("</div>", unsafe_allow_html=True)
 
-# Interactive Electronic Emergency Checklist (ECL)
+# Interactive Emergency Combat Checklist (ECL)
 with st.expander("📋 EMERGENCY COMBAT CHECKLIST (ECL) // MAYDAY DRILL", expanded=(metrics["severity"] == "RED")):
     col_ecl1, col_ecl2 = st.columns(2)
     with col_ecl1:
@@ -787,7 +751,7 @@ with st.expander("📋 EMERGENCY COMBAT CHECKLIST (ECL) // MAYDAY DRILL", expand
         st.checkbox("5. Autonomous RTB Waypoint Vector: Armed around Hostile SAM Dome", value=(metrics["severity"] == "RED"))
         st.checkbox("6. Swarm Datalink: Surveillance Handover Handshake with UAV-02", value=True)
 
-# Navigation Tabs
+# Navigation Tabs (Mobile Touch Swipeable)
 tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
     "📈 SENSOR BUS & EKF",
     "🌀 TURBO COMPRESSOR MAP",
