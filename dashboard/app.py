@@ -106,6 +106,8 @@ class EmbeddedUAVTransmitter:
                 "vibration_rms": round(vibe, 2),
                 "altitude_m": round(altitude, 1),
                 "fuel_flow": round(24.5 + (rpm - 4800) * 0.008, 2),
+                "pitch_deg": round(2.5 + random.uniform(-0.4, 0.4), 1),
+                "roll_deg": round(0.5 + random.uniform(-0.8, 0.8), 1),
                 "flight_phase": phase
             }
 
@@ -119,7 +121,7 @@ class EmbeddedUAVTransmitter:
 
         sock.close()
 
-# Military Tactical HUD Stylesheet
+# Tactical HUD Styling
 st.markdown("""
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -153,8 +155,19 @@ st.markdown("""
         align-items: center;
         font-size: 0.88rem;
         color: #79a8d7;
-        margin-bottom: 15px;
+        margin-bottom: 12px;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+    }
+    .fadec-box {
+        background: rgba(8, 16, 30, 0.8);
+        border: 1px solid rgba(0, 240, 255, 0.25);
+        border-radius: 4px;
+        padding: 8px 14px;
+        font-size: 0.78rem;
+        color: #94a3b8;
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
     }
     .alert-banner-critical {
         background: rgba(80, 0, 15, 0.9);
@@ -242,7 +255,7 @@ transmitter_daemon = EmbeddedUAVTransmitter.get_instance()
 st.sidebar.markdown("""
 <div style='text-align: center; padding: 5px 0;'>
     <div style='font-family: Orbitron; font-size: 1.15rem; color: #00f0ff; letter-spacing: 2px;'>AEROTWIN TACTICAL</div>
-    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE TELEMETRY NODE // 10.0.0-PRO</div>
+    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE TELEMETRY NODE // 11.0.0-PRO</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -291,6 +304,7 @@ if source_mode == "🔴 LIVE HARDWARE UDP LINK (PORT 14550)":
             "oil_temp_actual": 92.0, "oil_temp_physics": 90.0,
             "egt_actual": 810.0, "egt_physics": 810.0, "map_inhg": 32.0,
             "vibration_rms": 1.1, "altitude_m": 1800, "fuel_flow": 24.0,
+            "pitch_deg": 2.5, "roll_deg": 0.0,
             "flight_phase": "STANDBY"
         }])
         current_row = df.iloc[0].copy()
@@ -343,6 +357,7 @@ safe_keys = {
     "oil_temp_actual": 92.0, "oil_temp_physics": 90.0,
     "egt_actual": 810.0, "egt_physics": 810.0, "map_inhg": 32.0,
     "vibration_rms": 1.1, "altitude_m": 1800.0, "fuel_flow": 24.0,
+    "pitch_deg": 2.5, "roll_deg": 0.0,
     "flight_phase": "CRUISE"
 }
 for k, v in safe_keys.items():
@@ -387,15 +402,47 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Gauges Strip
-g1, g2, g3, g4 = st.columns(4)
+# Dual-Channel FADEC ECU Redundancy Strip
+lane_b_status = "HOT STANDBY (SYNCHRONIZED)" if metrics["severity"] != "RED" else "AUTO-FAILOVER READY"
+st.markdown(f"""
+<div class='fadec-box'>
+    <div>FADEC PRIMARY [LANE A]: <span style='color: #00ff66;'>ONLINE (28.2V DC)</span> | CPU: 12% | BER: 0.00%</div>
+    <div>FADEC BACKUP [LANE B]: <span style='color: #00f0ff;'>{lane_b_status} (28.1V DC)</span> | CAN-2 BUS: ARMED</div>
+    <div>MIL-STD-1553: <span style='color: #00ff66;'>DUAL REDUNDANT BUS ACTIVE</span></div>
+</div>
+""", unsafe_allow_html=True)
+
+# Primary Flight Display (PFD) + Cockpit Gauges
+pfd_col, g1, g2, g3, g4 = st.columns([1.2, 1, 1, 1, 1])
+
+with pfd_col:
+    # Artificial Horizon (Pitch/Roll)
+    pitch = float(current_row['pitch_deg'])
+    roll = float(current_row['roll_deg'])
+    fig_pfd = go.Figure()
+    fig_pfd.add_shape(type="rect", x0=-10, y0=-10, x1=10, y1=pitch, fillcolor="#78350f", line=dict(width=0))
+    fig_pfd.add_shape(type="rect", x0=-10, y0=pitch, x1=10, y1=10, fillcolor="#0369a1", line=dict(width=0))
+    # Horizon bar
+    fig_pfd.add_shape(type="line", x0=-8, y0=pitch, x1=8, y1=pitch, line=dict(color="#ffffff", width=2))
+    # Reticle aircraft symbol
+    fig_pfd.add_shape(type="line", x0=-3, y0=0, x1=-1, y1=0, line=dict(color="#facc15", width=3))
+    fig_pfd.add_shape(type="line", x0=1, y0=0, x1=3, y1=0, line=dict(color="#facc15", width=3))
+    fig_pfd.add_shape(type="circle", x0=-0.5, y0=-0.5, x1=0.5, y1=0.5, line=dict(color="#facc15", width=2))
+    fig_pfd.update_layout(
+        title={'text': "<b>TACTICAL PFD HUD</b>", 'font': {'size': 11, 'family': 'Orbitron', 'color': '#00f0ff'}},
+        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(10,20,35,0.8)',
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-10, 10]),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-10, 10]),
+        height=175, margin=dict(l=5, r=5, t=30, b=5)
+    )
+    st.plotly_chart(fig_pfd, use_container_width=True)
 
 def make_hud_gauge(title, value, min_v, max_v, unit, alert_v, warn_v, is_invert=False):
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
         value=value,
-        title={'text': f"<b>{title}</b>", 'font': {'size': 13, 'family': 'Orbitron', 'color': '#00f0ff'}},
-        number={'suffix': f" {unit}", 'font': {'size': 20, 'family': 'Orbitron', 'color': '#ffffff'}},
+        title={'text': f"<b>{title}</b>", 'font': {'size': 12, 'family': 'Orbitron', 'color': '#00f0ff'}},
+        number={'suffix': f" {unit}", 'font': {'size': 18, 'family': 'Orbitron', 'color': '#ffffff'}},
         gauge={
             'axis': {'range': [min_v, max_v], 'tickwidth': 1, 'tickcolor': "#8892b0"},
             'bar': {'color': "#00f0ff", 'thickness': 0.25},
@@ -410,17 +457,17 @@ def make_hud_gauge(title, value, min_v, max_v, unit, alert_v, warn_v, is_invert=
             'threshold': {'line': {'color': "#ff003c", 'width': 3}, 'thickness': 0.75, 'value': alert_v}
         }
     ))
-    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', height=175, margin=dict(l=15, r=15, t=30, b=15), font={'family': "Share Tech Mono"})
+    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', height=175, margin=dict(l=10, r=10, t=30, b=10), font={'family': "Share Tech Mono"})
     return fig
 
 with g1:
     st.plotly_chart(make_hud_gauge("HEALTH INDEX", metrics['health_index'], 0, 100, "%", 45, 75, is_invert=True), use_container_width=True)
 with g2:
-    st.plotly_chart(make_hud_gauge("CYLINDER TEMP (CHT)", current_row['cht_actual'], 80, 170, "°C", 145, 130), use_container_width=True)
+    st.plotly_chart(make_hud_gauge("CYLINDER TEMP", current_row['cht_actual'], 80, 170, "°C", 145, 130), use_container_width=True)
 with g3:
     st.plotly_chart(make_hud_gauge("OIL PRESSURE", current_row['oil_press_actual'], 0, 6, "bar", 1.8, 2.5, is_invert=True), use_container_width=True)
 with g4:
-    st.plotly_chart(make_hud_gauge("CRANKSHAFT TACHO", current_row['rpm'], 0, 6000, "RPM", 5600, 5200), use_container_width=True)
+    st.plotly_chart(make_hud_gauge("CRANKSHAFT", current_row['rpm'], 0, 6000, "RPM", 5600, 5200), use_container_width=True)
 
 # Advisory Banner
 if spoofed_flag:
@@ -432,7 +479,7 @@ if spoofed_flag:
 elif metrics["severity"] == "RED":
     st.markdown(f"""
     <div class='alert-banner-critical'>
-        <strong>⚠️ CRITICAL TACTICAL ADVISORY [AUTONOMOUS RETURN-TO-BASE RECOMMENDED]</strong><br>
+        <strong>⚠️ CRITICAL TACTICAL ADVISORY [AUTONOMOUS THREAT-AVOIDANCE RTB ACTIVE]</strong><br>
         <strong>Fault Mode:</strong> {metrics['status']} &nbsp;|&nbsp; <strong>Root Cause:</strong> {metrics['alert_message']}<br>
         <strong>Remaining Flight Endurance (RUL):</strong> {metrics['rul_hours']} Hours
     </div>
@@ -469,12 +516,12 @@ with c_mit3:
 
 # Navigation Tabs
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-    "📈 SENSOR BUS & EKF FILTER",
-    "🌊 ACOUSTIC WATERFALL SPECTROGRAM",
-    "🎯 XAI ROOT CAUSE & SWARM",
-    "🛩️ DEAD-STICK GLIDE & BSFC",
-    "🧊 3D PROPULSION CORE",
-    "🗺️ MULTI-BASE DIVERT RADAR",
+    "📈 SENSOR BUS & EKF",
+    "🔥 THERMODYNAMIC P-V LOOP",
+    "🌊 ACOUSTIC SPECTROGRAM",
+    "🎯 XAI & SWARM MESH",
+    "🧊 3D ENGINE CORE",
+    "🗺️ RADAR & SAM AVOIDANCE",
     "📋 NATO INCIDENT DEBRIEF"
 ])
 
@@ -526,10 +573,49 @@ with tab1:
     st.dataframe(pd.DataFrame(matrix_data), use_container_width=True)
 
 with tab2:
-    st.markdown("<div style='color: #00f0ff; font-weight: bold;'>2D ACOUSTIC & VIBRATION WATERFALL SPECTROGRAM (0 - 8 kHz)</div>", unsafe_allow_html=True)
-    st.caption("Rolling high-frequency power spectral density over flight timeline. Detonation knock and bearing fatigue trigger red spectral energy ridges in the 5.5–7.0 kHz band.")
+    st.markdown("<div style='color: #00f0ff; font-weight: bold;'>THERMODYNAMIC INDICATOR DIAGRAM (P-V OTTO COMBUSTION CYCLE)</div>", unsafe_allow_html=True)
+    st.caption("Cylinder combustion pressure vs volume. Severe thermal runaway & knocking distort expansion work and drop Indicated Mean Effective Pressure (IMEP).")
 
-    # Generate synthetic 2D spectrogram history
+    v_c = 45.0  # Clearance volume (cc)
+    v_d = 340.0 # Displacement volume (cc)
+    v_arr = np.linspace(v_c, v_c + v_d, 60)
+
+    gamma = 1.35
+    p_intake = current_row['map_inhg'] * 0.0338639 * 100 # kPa
+    p_comp = p_intake * ((v_c + v_d) / v_arr)**gamma
+
+    # Peak combustion pressure
+    knock_penalty = 1.35 if current_row['vibration_rms'] > 1.5 else 1.0
+    p_peak = (5500.0 * knock_penalty) if metrics['severity'] != "RED" else 3600.0
+    p_exp = p_peak * (v_c / v_arr)**gamma
+
+    v_loop = np.concatenate([v_arr, v_arr[::-1], [v_c]])
+    p_loop = np.concatenate([p_comp, p_exp[::-1], [p_comp[0]]])
+
+    # Baseline nominal loop
+    p_peak_nom = 5500.0
+    p_exp_nom = p_peak_nom * (v_c / v_arr)**gamma
+    p_loop_nom = np.concatenate([p_comp, p_exp_nom[::-1], [p_comp[0]]])
+
+    fig_pv = go.Figure()
+    fig_pv.add_trace(go.Scatter(x=v_loop_nom, y=p_loop_nom, mode='lines', line=dict(color='#00f0ff', dash='dash', width=2), name="Nominal Baseline Cycle"))
+    fig_pv.add_trace(go.Scatter(x=v_loop, y=p_loop, fill='toself', fillcolor='rgba(255, 0, 60, 0.2)' if metrics['severity'] == "RED" else 'rgba(0, 255, 102, 0.2)',
+                                line=dict(color='#ff003c' if metrics['severity'] == "RED" else '#00ff66', width=3), name="Active Combustion Loop"))
+
+    imep_val = round(np.trapz(p_exp - p_comp, v_arr) / v_d, 1)
+    thermal_eff = round(max(15.0, min(36.0, 34.0 - (current_row['cht_actual'] - 110.0) * 0.35)), 1)
+
+    fig_pv.update_layout(
+        hud_plot_layout, height=360,
+        xaxis_title="Cylinder Volume (cc)", yaxis_title="In-Cylinder Pressure (kPa)",
+        annotations=[
+            dict(x=v_c + 20, y=p_peak * 0.9, text=f"IMEP: {imep_val} kPa | η_th: {thermal_eff}%", showarrow=False, font=dict(color="#00f0ff", size=13))
+        ]
+    )
+    st.plotly_chart(fig_pv, use_container_width=True)
+
+with tab3:
+    st.markdown("<div style='color: #00f0ff; font-weight: bold;'>2D ACOUSTIC & VIBRATION WATERFALL SPECTROGRAM (0 - 8 kHz)</div>", unsafe_allow_html=True)
     t_steps = max(5, t_idx + 1)
     freq_bins = np.linspace(100, 8000, 80)
     spec_matrix = np.zeros((len(freq_bins), t_steps))
@@ -537,29 +623,20 @@ with tab2:
     for i in range(t_steps):
         r_row = df.iloc[i] if i < len(df) else current_row
         rpm_f = r_row['rpm'] / 60.0
-        # 1X & 2X fundamental harmonics
         spec_matrix[:, i] += 0.2 / (1 + ((freq_bins - rpm_f) / 50)**2)
         spec_matrix[:, i] += 0.15 / (1 + ((freq_bins - 2 * rpm_f) / 70)**2)
-        # Detonation energy spike
         if r_row['vibration_rms'] > 1.3:
             spec_matrix[:, i] += 0.85 / (1 + ((freq_bins - 6200) / 350)**2)
         spec_matrix[:, i] += np.random.uniform(0.01, 0.05, len(freq_bins))
 
     fig_waterfall = go.Figure(data=go.Heatmap(
-        z=spec_matrix,
-        x=list(df['timestamp'][:t_steps]),
-        y=freq_bins,
-        colorscale='Viridis',
-        colorbar=dict(title="Energy (G²/Hz)")
+        z=spec_matrix, x=list(df['timestamp'][:t_steps]), y=freq_bins,
+        colorscale='Viridis', colorbar=dict(title="Energy (G²/Hz)")
     ))
-    fig_waterfall.update_layout(
-        hud_plot_layout, height=360,
-        xaxis_title="Mission Elapsed Time (Seconds)",
-        yaxis_title="Frequency Band (Hz)"
-    )
+    fig_waterfall.update_layout(hud_plot_layout, height=360, xaxis_title="MET (Seconds)", yaxis_title="Frequency Band (Hz)")
     st.plotly_chart(fig_waterfall, use_container_width=True)
 
-with tab3:
+with tab4:
     col_xai1, col_xai2 = st.columns([3, 2])
     with col_xai1:
         st.markdown("<div style='color: #00f0ff; font-weight: bold;'>EXPLAINABLE AI (XAI) FAULT ATTRIBUTION WATERFALL</div>", unsafe_allow_html=True)
@@ -596,51 +673,6 @@ with tab3:
                 st.rerun()
             if st.session_state.swarm_handover:
                 st.success("✓ MISSION TASKING TRANSFERRED TO UAV-02. UAV-01 CLEARED FOR IMMEDIATE RTB.")
-
-with tab4:
-    col_glide1, col_glide2 = st.columns(2)
-    with col_glide1:
-        st.markdown("<div style='color: #00f0ff; font-weight: bold;'>UNPOWERED DEAD-STICK GLIDE CONE</div>", unsafe_allow_html=True)
-        st.caption("Maximum glide distance from current altitude without engine power (L/D = 12:1).")
-        
-        current_alt = current_row['altitude_m']
-        max_glide_km = round((current_alt / 1000.0) * 12.0, 1)
-        
-        st.metric("Total Glide Reach", f"{max_glide_km} km", delta=f"{current_alt} m AGL")
-        
-        dist_range = np.linspace(0, max_glide_km, 30)
-        glide_slope_alt = np.maximum(0, (current_alt / 1000.0) - (dist_range / 12.0)) * 1000.0
-
-        fig_glide = go.Figure()
-        fig_glide.add_trace(go.Scatter(x=dist_range, y=glide_slope_alt, mode='lines', line=dict(color='#00ff66', width=3), name="Glide Trajectory"))
-        fig_glide.add_hline(y=0, line_color="#ffffff", annotation_text="Ground Surface (0m)")
-        fig_glide.update_layout(hud_plot_layout, height=270, xaxis_title="Glide Range (km)", yaxis_title="Altitude (m)")
-        st.plotly_chart(fig_glide, use_container_width=True)
-
-    with col_glide2:
-        st.markdown("<div style='color: #00ff66; font-weight: bold;'>PROPULSION BSFC EFFICIENCY & RANGE SHRINKAGE</div>", unsafe_allow_html=True)
-        # BSFC (Brake Specific Fuel Consumption in g/kW-h)
-        base_bsfc = 285.0
-        thermal_penalty = (current_row['cht_actual'] - 110.0) * 1.6 if current_row['cht_actual'] > 110 else 0
-        actual_bsfc = round(base_bsfc + thermal_penalty, 1)
-        
-        nominal_range_km = 1200
-        degraded_range_km = round(nominal_range_km * (base_bsfc / actual_bsfc), 0)
-        
-        st.metric("Thermal BSFC Penalty", f"{actual_bsfc} g/kWh", delta=f"-{int(nominal_range_km - degraded_range_km)} km range lost", delta_color="inverse")
-        
-        future_t = np.linspace(0, 120, 25)
-        current_h = metrics['health_index']
-        decay_rate = 0.05 if current_h > 70 else (0.45 if current_h > 40 else 0.85)
-        if st.session_state.limp_mode:
-            decay_rate *= 0.45
-
-        p50_h = np.maximum(0, current_h - (future_t * decay_rate))
-        fig_mc = go.Figure()
-        fig_mc.add_trace(go.Scatter(x=future_t, y=p50_h, line=dict(color='#00f0ff', width=3), name='P50 Projection'))
-        fig_mc.add_hline(y=20.0, line_dash="dash", line_color="#ff003c", annotation_text="Seizure Limit (20%)")
-        fig_mc.update_layout(hud_plot_layout, height=270, xaxis_title="Minutes Ahead", yaxis_title="Health Index (%)")
-        st.plotly_chart(fig_mc, use_container_width=True)
 
 with tab5:
     st.markdown("<div style='color: #00f0ff; font-weight: bold;'>3D ISOMETRIC PROPULSION CORE STRESS MODEL</div>", unsafe_allow_html=True)
@@ -679,8 +711,8 @@ with tab5:
     st.plotly_chart(fig_3d, use_container_width=True)
 
 with tab6:
-    st.markdown("<div style='color: #00f0ff; font-weight: bold;'>TACTICAL MULTI-BASE RADAR & AUTONOMOUS DIVERT CALCULATOR</div>", unsafe_allow_html=True)
-    st.caption("Live reachability assessment across 3 recovery runways based on active dead-stick glide margin.")
+    st.markdown("<div style='color: #00f0ff; font-weight: bold;'>TACTICAL MULTI-BASE RADAR & AUTONOMOUS SAM THREAT AVOIDANCE</div>", unsafe_allow_html=True)
+    st.caption("Real-time threat evaluation. When diverting under propulsion distress, flight autopilot routes around hostile SAM radar envelope.")
 
     uav_x = [0, 8, 16, 25, 32, 38, 42, 40, 32, 22, 12, 5, 0]
     uav_y = [0, 6, 12, 18, 22, 22, 15, 6, -2, -6, -4, -1, 0]
@@ -689,34 +721,44 @@ with tab6:
     cur_x = uav_x[norm_idx]
     cur_y = uav_y[norm_idx]
 
-    # Airbase Locations
     bases = [
         {"name": "FOB Alpha [HOME]", "x": 0, "y": 0, "color": "#00ff66"},
         {"name": "FOB Bravo [FWD STRIP]", "x": 30, "y": 8, "color": "#38bdf8"},
         {"name": "Highway Strip Charlie", "x": 20, "y": 28, "color": "#f59e0b"}
     ]
 
-    # Calculate distances from UAV to each base
-    for b in bases:
-        dist = np.sqrt((cur_x - b["x"])**2 + (cur_y - b["y"])**2)
-        b["dist"] = round(dist, 1)
-        b["reachable"] = dist <= ((current_row['altitude_m'] / 1000.0) * 12.0)
-
     fig_radar = go.Figure()
+
+    # Range Rings
     for r in [15, 30, 48]:
         fig_radar.add_shape(type="circle", x0=-r, y0=-r, x1=r, y1=r, line=dict(color="rgba(0, 240, 255, 0.15)", dash="dot", width=1))
+
+    # Hostile SAM Missile Site (Threat Dome at X=16, Y=10, Radius=12km)
+    sam_x, sam_y, sam_r = 16, 10, 12
+    fig_radar.add_shape(
+        type="circle", x0=sam_x - sam_r, y0=sam_y - sam_r, x1=sam_x + sam_r, y1=sam_y + sam_r,
+        line=dict(color="rgba(255, 0, 60, 0.8)", dash="dash", width=2),
+        fillcolor="rgba(255, 0, 60, 0.15)"
+    )
+    fig_radar.add_trace(go.Scatter(
+        x=[sam_x], y=[sam_y], mode="markers+text",
+        marker=dict(size=14, color="#ff003c", symbol="x"),
+        text=["<b>[SAM-6 ENEMY RADAR]</b>"], textposition="top center", name="SAM Threat"
+    ))
 
     # Flown Path
     fig_radar.add_trace(go.Scatter(x=uav_x[:norm_idx+1], y=uav_y[:norm_idx+1], mode="lines+markers", line=dict(color="#00f0ff", width=2.5), name="Patrol Route"))
 
-    # Plot bases
+    # Plot Bases
     for b in bases:
-        status_label = "REACHABLE" if b["reachable"] else "UNREACHABLE"
-        color = b["color"] if b["reachable"] else "#64748b"
+        dist = np.sqrt((cur_x - b["x"])**2 + (cur_y - b["y"])**2)
+        reachable = dist <= ((current_row['altitude_m'] / 1000.0) * 12.0)
+        status_lbl = "REACHABLE" if reachable else "UNREACHABLE"
+        color = b["color"] if reachable else "#64748b"
         fig_radar.add_trace(go.Scatter(
             x=[b["x"]], y=[b["y"]], mode="markers+text",
             marker=dict(size=14, color=color, symbol="triangle-up"),
-            text=[f"<b>{b['name']}</b><br>{b['dist']}km ({status_label})"],
+            text=[f"<b>{b['name']}</b><br>{dist:.1f}km ({status_lbl})"],
             textposition="bottom center", name=b["name"]
         ))
 
@@ -727,27 +769,26 @@ with tab6:
         text=[f"<b>UAV-01 (T+{current_row['timestamp']:.0f}s)</b>"], textposition="top right", name="UAV-01"
     ))
 
-    # Select Optimal Emergency Divert Vector
+    # Autonomous SAM-Avoidance RTB Vector
     if metrics["severity"] == "RED" and not spoofed_flag:
-        # Pick closest reachable base
-        reachable_bases = [b for b in bases if b["reachable"]]
-        chosen_base = min(reachable_bases, key=lambda x: x["dist"]) if reachable_bases else bases[0]
-        
+        # Avoid direct route through SAM (16, 10), insert dogleg waypoint
+        dogleg_wp_x = 32
+        dogleg_wp_y = 2
         fig_radar.add_trace(go.Scatter(
-            x=[cur_x, chosen_base["x"]], y=[cur_y, chosen_base["y"]],
-            mode="lines+text", line=dict(color="#ff003c", width=3.5, dash="dashdot"),
-            text=["", f"<b>AUTONOMOUS DIVERT TO {chosen_base['name']}</b>"],
-            textposition="middle right", name="Divert Vector"
+            x=[cur_x, dogleg_wp_x, 0], y=[cur_y, dogleg_wp_y, 0],
+            mode="lines+markers+text", line=dict(color="#ff003c", width=3.5, dash="dashdot"),
+            marker=dict(size=8, color="#ff003c"),
+            text=["", "<b>WP-DOGLEG [SAM BYPASS]</b>", "<b>FOB ALPHA TOUCHDOWN</b>"],
+            textposition="top right", name="Threat Avoidance Vector"
         ))
 
-    fig_radar.update_layout(hud_plot_layout, height=450, xaxis=dict(range=[-35, 55], title="Sector Range X (km)"), yaxis=dict(range=[-25, 45], title="Sector Range Y (km)"))
+    fig_radar.update_layout(hud_plot_layout, height=460, xaxis=dict(range=[-35, 55], title="Sector Range X (km)"), yaxis=dict(range=[-25, 45], title="Sector Range Y (km)"))
     st.plotly_chart(fig_radar, use_container_width=True)
 
 with tab7:
     col_rep1, col_rep2 = st.columns([3, 2])
     with col_rep1:
         st.markdown("<div style='color: #00f0ff; font-weight: bold;'>NATO STANAG AIRWORTHINESS INCIDENT REPORT (MIL-STD-882E)</div>", unsafe_allow_html=True)
-        
         haz_class = "CATEGORY 1 - CATASTROPHIC" if metrics['severity'] == "RED" else ("CATEGORY 2 - CRITICAL" if metrics['severity'] == "AMBER" else "CATEGORY 4 - NEGLIGIBLE")
         lru_item = "ROTAX 915iS C-HEAD P/N 995-830 & RADIATOR CORE" if current_row['cht_actual'] > 135 else ("OIL PRESSURE REGULATOR ASSY P/N 856-112" if current_row['oil_press_actual'] < 2.0 else "ALL PROPULSION UNITS NOMINAL")
         action_plan = "MANDATORY STRIP-DOWN LEVEL 3 INSPECTION BEFORE NEXT SORTIE" if metrics['health_index'] < 50 else "STANDARD 25-HOUR TURNAROUND LINE CHECK"
