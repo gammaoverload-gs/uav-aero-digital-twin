@@ -57,7 +57,7 @@ class EmbeddedUAVTransmitter:
     def _run_loop(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         met = 0
-        altitude = 1200.0
+        altitude = 1800.0
         rpm = 5000.0
         cht = 112.0
         oil_p = 4.2
@@ -68,7 +68,7 @@ class EmbeddedUAVTransmitter:
 
             if met < 40:
                 phase = "CLIMB"
-                altitude += 20
+                altitude += 15
                 rpm = 5300 + random.uniform(-15, 15)
             elif met < 140:
                 phase = "CRUISE"
@@ -81,7 +81,7 @@ class EmbeddedUAVTransmitter:
             cht_model = 110.0 + (rpm - 4800) * 0.02
             oil_model = 4.2 - (rpm - 4800) * 0.0003
 
-            # Fault Injection after 60s
+            # Progressive Fault Injection after 60s
             if met > 60:
                 cht += random.uniform(0.35, 0.75)
                 oil_p = max(1.1, oil_p - random.uniform(0.015, 0.035))
@@ -190,6 +190,16 @@ st.markdown("""
         line-height: 1.5;
         box-shadow: inset 0 0 15px rgba(0, 240, 255, 0.1);
     }
+    .nato-card {
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(0, 240, 255, 0.3);
+        border-left: 6px solid #00f0ff;
+        padding: 15px;
+        border-radius: 5px;
+        color: #cbd5e1;
+        font-size: 0.85rem;
+        line-height: 1.7;
+    }
     .packet-hex {
         font-family: 'Share Tech Mono', monospace;
         background: rgba(5, 10, 20, 0.8);
@@ -232,7 +242,7 @@ transmitter_daemon = EmbeddedUAVTransmitter.get_instance()
 st.sidebar.markdown("""
 <div style='text-align: center; padding: 5px 0;'>
     <div style='font-family: Orbitron; font-size: 1.15rem; color: #00f0ff; letter-spacing: 2px;'>AEROTWIN TACTICAL</div>
-    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE TELEMETRY NODE // 9.5.0-PRO</div>
+    <div style='font-size: 0.72rem; color: #64748b;'>DEFENSE TELEMETRY NODE // 10.0.0-PRO</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -280,7 +290,7 @@ if source_mode == "🔴 LIVE HARDWARE UDP LINK (PORT 14550)":
             "oil_press_actual": 4.2, "oil_press_physics": 4.2,
             "oil_temp_actual": 92.0, "oil_temp_physics": 90.0,
             "egt_actual": 810.0, "egt_physics": 810.0, "map_inhg": 32.0,
-            "vibration_rms": 1.1, "altitude_m": 1200, "fuel_flow": 24.0,
+            "vibration_rms": 1.1, "altitude_m": 1800, "fuel_flow": 24.0,
             "flight_phase": "STANDBY"
         }])
         current_row = df.iloc[0].copy()
@@ -326,13 +336,13 @@ else:
 
 enable_voice = st.sidebar.checkbox("🔊 Voice HUD Announcements", value=True)
 
-# Defensive Key Imputation (Prevents any KeyError permanently)
+# Defensive Key Imputation
 safe_keys = {
     "timestamp": 0, "rpm": 5000.0, "cht_actual": 110.0, "cht_physics": 110.0,
     "oil_press_actual": 4.2, "oil_press_physics": 4.2,
     "oil_temp_actual": 92.0, "oil_temp_physics": 90.0,
     "egt_actual": 810.0, "egt_physics": 810.0, "map_inhg": 32.0,
-    "vibration_rms": 1.1, "altitude_m": 1200.0, "fuel_flow": 24.0,
+    "vibration_rms": 1.1, "altitude_m": 1800.0, "fuel_flow": 24.0,
     "flight_phase": "CRUISE"
 }
 for k, v in safe_keys.items():
@@ -458,13 +468,14 @@ with c_mit3:
     st.caption("Active Mitigations: " + (", ".join(status_mit) if status_mit else "NONE (NOMINAL CRUISE)"))
 
 # Navigation Tabs
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "📈 SENSOR BUS & EKF FILTER",
+    "🌊 ACOUSTIC WATERFALL SPECTROGRAM",
     "🎯 XAI ROOT CAUSE & SWARM",
-    "🛩️ DEAD-STICK GLIDE & RUL",
+    "🛩️ DEAD-STICK GLIDE & BSFC",
     "🧊 3D PROPULSION CORE",
-    "🗺️ RADAR & VECTOR DIVERSION",
-    "📡 STANAG 4586 & TERMINAL"
+    "🗺️ MULTI-BASE DIVERT RADAR",
+    "📋 NATO INCIDENT DEBRIEF"
 ])
 
 hud_plot_layout = dict(
@@ -515,6 +526,40 @@ with tab1:
     st.dataframe(pd.DataFrame(matrix_data), use_container_width=True)
 
 with tab2:
+    st.markdown("<div style='color: #00f0ff; font-weight: bold;'>2D ACOUSTIC & VIBRATION WATERFALL SPECTROGRAM (0 - 8 kHz)</div>", unsafe_allow_html=True)
+    st.caption("Rolling high-frequency power spectral density over flight timeline. Detonation knock and bearing fatigue trigger red spectral energy ridges in the 5.5–7.0 kHz band.")
+
+    # Generate synthetic 2D spectrogram history
+    t_steps = max(5, t_idx + 1)
+    freq_bins = np.linspace(100, 8000, 80)
+    spec_matrix = np.zeros((len(freq_bins), t_steps))
+
+    for i in range(t_steps):
+        r_row = df.iloc[i] if i < len(df) else current_row
+        rpm_f = r_row['rpm'] / 60.0
+        # 1X & 2X fundamental harmonics
+        spec_matrix[:, i] += 0.2 / (1 + ((freq_bins - rpm_f) / 50)**2)
+        spec_matrix[:, i] += 0.15 / (1 + ((freq_bins - 2 * rpm_f) / 70)**2)
+        # Detonation energy spike
+        if r_row['vibration_rms'] > 1.3:
+            spec_matrix[:, i] += 0.85 / (1 + ((freq_bins - 6200) / 350)**2)
+        spec_matrix[:, i] += np.random.uniform(0.01, 0.05, len(freq_bins))
+
+    fig_waterfall = go.Figure(data=go.Heatmap(
+        z=spec_matrix,
+        x=list(df['timestamp'][:t_steps]),
+        y=freq_bins,
+        colorscale='Viridis',
+        colorbar=dict(title="Energy (G²/Hz)")
+    ))
+    fig_waterfall.update_layout(
+        hud_plot_layout, height=360,
+        xaxis_title="Mission Elapsed Time (Seconds)",
+        yaxis_title="Frequency Band (Hz)"
+    )
+    st.plotly_chart(fig_waterfall, use_container_width=True)
+
+with tab3:
     col_xai1, col_xai2 = st.columns([3, 2])
     with col_xai1:
         st.markdown("<div style='color: #00f0ff; font-weight: bold;'>EXPLAINABLE AI (XAI) FAULT ATTRIBUTION WATERFALL</div>", unsafe_allow_html=True)
@@ -552,22 +597,38 @@ with tab2:
             if st.session_state.swarm_handover:
                 st.success("✓ MISSION TASKING TRANSFERRED TO UAV-02. UAV-01 CLEARED FOR IMMEDIATE RTB.")
 
-with tab3:
+with tab4:
     col_glide1, col_glide2 = st.columns(2)
     with col_glide1:
-        st.markdown("<div style='color: #00f0ff; font-weight: bold;'>UNPOWERED DEAD-STICK GLIDE SLOPE PROFILE</div>", unsafe_allow_html=True)
-        dist_range = np.linspace(0, 35, 30)
-        current_alt_km = current_row['altitude_m'] / 1000.0
-        glide_slope_alt = np.maximum(0, current_alt_km - (dist_range / 12.0)) * 1000.0
+        st.markdown("<div style='color: #00f0ff; font-weight: bold;'>UNPOWERED DEAD-STICK GLIDE CONE</div>", unsafe_allow_html=True)
+        st.caption("Maximum glide distance from current altitude without engine power (L/D = 12:1).")
+        
+        current_alt = current_row['altitude_m']
+        max_glide_km = round((current_alt / 1000.0) * 12.0, 1)
+        
+        st.metric("Total Glide Reach", f"{max_glide_km} km", delta=f"{current_alt} m AGL")
+        
+        dist_range = np.linspace(0, max_glide_km, 30)
+        glide_slope_alt = np.maximum(0, (current_alt / 1000.0) - (dist_range / 12.0)) * 1000.0
 
         fig_glide = go.Figure()
-        fig_glide.add_trace(go.Scatter(x=dist_range, y=glide_slope_alt, mode='lines', line=dict(color='#00ff66' if glide_slope_alt[-1] == 0 else '#ff003c', width=3), name="Descent Path"))
-        fig_glide.add_hline(y=0, line_color="#ffffff", annotation_text="Runway Threshold")
-        fig_glide.update_layout(hud_plot_layout, height=330, xaxis_title="Distance to FOB Alpha (km)", yaxis_title="Altitude (m AGL)")
+        fig_glide.add_trace(go.Scatter(x=dist_range, y=glide_slope_alt, mode='lines', line=dict(color='#00ff66', width=3), name="Glide Trajectory"))
+        fig_glide.add_hline(y=0, line_color="#ffffff", annotation_text="Ground Surface (0m)")
+        fig_glide.update_layout(hud_plot_layout, height=270, xaxis_title="Glide Range (km)", yaxis_title="Altitude (m)")
         st.plotly_chart(fig_glide, use_container_width=True)
 
     with col_glide2:
-        st.markdown("<div style='color: #00ff66; font-weight: bold;'>MONTE CARLO PROGNOSTIC RUL ENVELOPE</div>", unsafe_allow_html=True)
+        st.markdown("<div style='color: #00ff66; font-weight: bold;'>PROPULSION BSFC EFFICIENCY & RANGE SHRINKAGE</div>", unsafe_allow_html=True)
+        # BSFC (Brake Specific Fuel Consumption in g/kW-h)
+        base_bsfc = 285.0
+        thermal_penalty = (current_row['cht_actual'] - 110.0) * 1.6 if current_row['cht_actual'] > 110 else 0
+        actual_bsfc = round(base_bsfc + thermal_penalty, 1)
+        
+        nominal_range_km = 1200
+        degraded_range_km = round(nominal_range_km * (base_bsfc / actual_bsfc), 0)
+        
+        st.metric("Thermal BSFC Penalty", f"{actual_bsfc} g/kWh", delta=f"-{int(nominal_range_km - degraded_range_km)} km range lost", delta_color="inverse")
+        
         future_t = np.linspace(0, 120, 25)
         current_h = metrics['health_index']
         decay_rate = 0.05 if current_h > 70 else (0.45 if current_h > 40 else 0.85)
@@ -575,18 +636,13 @@ with tab3:
             decay_rate *= 0.45
 
         p50_h = np.maximum(0, current_h - (future_t * decay_rate))
-        p10_h = np.maximum(0, current_h - (future_t * (decay_rate * 0.65)))
-        p90_h = np.maximum(0, current_h - (future_t * (decay_rate * 1.45)))
-
         fig_mc = go.Figure()
-        fig_mc.add_trace(go.Scatter(x=future_t, y=p10_h, line=dict(color='rgba(0, 240, 255, 0.2)'), showlegend=False))
-        fig_mc.add_trace(go.Scatter(x=future_t, y=p90_h, fill='tonexty', fillcolor='rgba(255, 0, 60, 0.15)', line=dict(color='rgba(255, 0, 60, 0.2)'), name='90% Confidence'))
         fig_mc.add_trace(go.Scatter(x=future_t, y=p50_h, line=dict(color='#00f0ff', width=3), name='P50 Projection'))
         fig_mc.add_hline(y=20.0, line_dash="dash", line_color="#ff003c", annotation_text="Seizure Limit (20%)")
-        fig_mc.update_layout(hud_plot_layout, height=330, xaxis_title="Minutes Ahead", yaxis_title="Health Index (%)")
+        fig_mc.update_layout(hud_plot_layout, height=270, xaxis_title="Minutes Ahead", yaxis_title="Health Index (%)")
         st.plotly_chart(fig_mc, use_container_width=True)
 
-with tab4:
+with tab5:
     st.markdown("<div style='color: #00f0ff; font-weight: bold;'>3D ISOMETRIC PROPULSION CORE STRESS MODEL</div>", unsafe_allow_html=True)
     cht_val = current_row['cht_actual']
     oil_p = current_row['oil_press_actual']
@@ -622,8 +678,10 @@ with tab4:
     )
     st.plotly_chart(fig_3d, use_container_width=True)
 
-with tab5:
-    st.markdown("<div style='color: #00f0ff; font-weight: bold;'>TACTICAL MISSION RADAR & AUTONOMOUS RTB VECTOR</div>", unsafe_allow_html=True)
+with tab6:
+    st.markdown("<div style='color: #00f0ff; font-weight: bold;'>TACTICAL MULTI-BASE RADAR & AUTONOMOUS DIVERT CALCULATOR</div>", unsafe_allow_html=True)
+    st.caption("Live reachability assessment across 3 recovery runways based on active dead-stick glide margin.")
+
     uav_x = [0, 8, 16, 25, 32, 38, 42, 40, 32, 22, 12, 5, 0]
     uav_y = [0, 6, 12, 18, 22, 22, 15, 6, -2, -6, -4, -1, 0]
     norm_idx = int((t_idx / max(1, len(df))) * (len(uav_x) - 1))
@@ -631,43 +689,84 @@ with tab5:
     cur_x = uav_x[norm_idx]
     cur_y = uav_y[norm_idx]
 
+    # Airbase Locations
+    bases = [
+        {"name": "FOB Alpha [HOME]", "x": 0, "y": 0, "color": "#00ff66"},
+        {"name": "FOB Bravo [FWD STRIP]", "x": 30, "y": 8, "color": "#38bdf8"},
+        {"name": "Highway Strip Charlie", "x": 20, "y": 28, "color": "#f59e0b"}
+    ]
+
+    # Calculate distances from UAV to each base
+    for b in bases:
+        dist = np.sqrt((cur_x - b["x"])**2 + (cur_y - b["y"])**2)
+        b["dist"] = round(dist, 1)
+        b["reachable"] = dist <= ((current_row['altitude_m'] / 1000.0) * 12.0)
+
     fig_radar = go.Figure()
-    for r in [10, 25, 45]:
+    for r in [15, 30, 48]:
         fig_radar.add_shape(type="circle", x0=-r, y0=-r, x1=r, y1=r, line=dict(color="rgba(0, 240, 255, 0.15)", dash="dot", width=1))
 
-    fig_radar.add_trace(go.Scatter(x=uav_x[:norm_idx+1], y=uav_y[:norm_idx+1], mode="lines+markers", line=dict(color="#00f0ff", width=2.5), name="Patrol Track"))
-    fig_radar.add_trace(go.Scatter(x=[0], y=[0], mode="markers+text", marker=dict(size=14, color="#00ff66", symbol="triangle-up"), text=["<b>[BASE FOB ALPHA]</b>"], textposition="bottom center", name="Home Base"))
-    fig_radar.add_trace(go.Scatter(x=[cur_x], y=[cur_y], mode="markers+text", marker=dict(size=16, color="#ff0055" if metrics["severity"] == "RED" else "#00f0ff", symbol="diamond"), text=[f"<b>UAV-01 (T+{current_row['timestamp']:.0f}s)</b>"], textposition="top right", name="UAV Vector"))
+    # Flown Path
+    fig_radar.add_trace(go.Scatter(x=uav_x[:norm_idx+1], y=uav_y[:norm_idx+1], mode="lines+markers", line=dict(color="#00f0ff", width=2.5), name="Patrol Route"))
 
+    # Plot bases
+    for b in bases:
+        status_label = "REACHABLE" if b["reachable"] else "UNREACHABLE"
+        color = b["color"] if b["reachable"] else "#64748b"
+        fig_radar.add_trace(go.Scatter(
+            x=[b["x"]], y=[b["y"]], mode="markers+text",
+            marker=dict(size=14, color=color, symbol="triangle-up"),
+            text=[f"<b>{b['name']}</b><br>{b['dist']}km ({status_label})"],
+            textposition="bottom center", name=b["name"]
+        ))
+
+    # UAV Marker
+    fig_radar.add_trace(go.Scatter(
+        x=[cur_x], y=[cur_y], mode="markers+text",
+        marker=dict(size=16, color="#ff0055" if metrics["severity"] == "RED" else "#00f0ff", symbol="diamond"),
+        text=[f"<b>UAV-01 (T+{current_row['timestamp']:.0f}s)</b>"], textposition="top right", name="UAV-01"
+    ))
+
+    # Select Optimal Emergency Divert Vector
     if metrics["severity"] == "RED" and not spoofed_flag:
-        fig_radar.add_trace(go.Scatter(x=[cur_x, 0], y=[cur_y, 0], mode="lines+text", line=dict(color="#ff003c", width=3, dash="dashdot"), text=["", "<b>AUTONOMOUS RTB DIVERSION ENGAGED</b>"], textposition="middle right", name="Autonomous RTB Vector"))
+        # Pick closest reachable base
+        reachable_bases = [b for b in bases if b["reachable"]]
+        chosen_base = min(reachable_bases, key=lambda x: x["dist"]) if reachable_bases else bases[0]
+        
+        fig_radar.add_trace(go.Scatter(
+            x=[cur_x, chosen_base["x"]], y=[cur_y, chosen_base["y"]],
+            mode="lines+text", line=dict(color="#ff003c", width=3.5, dash="dashdot"),
+            text=["", f"<b>AUTONOMOUS DIVERT TO {chosen_base['name']}</b>"],
+            textposition="middle right", name="Divert Vector"
+        ))
 
-    fig_radar.update_layout(hud_plot_layout, height=450, xaxis=dict(range=[-50, 50], title="Sector Range X (km)"), yaxis=dict(range=[-30, 50], title="Sector Range Y (km)"))
+    fig_radar.update_layout(hud_plot_layout, height=450, xaxis=dict(range=[-35, 55], title="Sector Range X (km)"), yaxis=dict(range=[-25, 45], title="Sector Range Y (km)"))
     st.plotly_chart(fig_radar, use_container_width=True)
 
-with tab6:
-    col_log, col_deb = st.columns([3, 2])
-    with col_log:
-        st.markdown("<div style='color: #00f0ff; font-weight: bold;'>MIL-STD AUTONOMOUS AI CO-PILOT TERMINAL LOG</div>", unsafe_allow_html=True)
-        log_feed = [
-            f"[T+000] FADEC_BUS: Link active. Ingestion mode: {source_mode}.",
-            f"[T+015] FADEC_BUS: Sampling synchronous frame pipeline.",
-            f"[T+050] THERMAL_CORE: Cruising altitude {current_row['altitude_m']}m. Model synchronized."
-        ]
-        if spoofed_flag:
-            log_feed.append(f"[T+{t_idx:03d}] KALMAN_GATE: Rejected spoofed telemetry spike (+45°C).")
-        if metrics["severity"] in ["RED", "AMBER"]:
-            log_feed.append(f"[T+{t_idx:03d}] PROGNOSTICS_AI: Health Index {metrics['health_index']}%. Fault: {metrics['status']}.")
-        if st.session_state.limp_mode:
-            log_feed.append(f"[T+{t_idx:03d}] MITIGATION: 65% Limp-Home throttle engaged.")
-        if st.session_state.swarm_handover:
-            log_feed.append(f"[T+{t_idx:03d}] DATALINK_MESH: Swarm handover handshake complete with UAV-02.")
+with tab7:
+    col_rep1, col_rep2 = st.columns([3, 2])
+    with col_rep1:
+        st.markdown("<div style='color: #00f0ff; font-weight: bold;'>NATO STANAG AIRWORTHINESS INCIDENT REPORT (MIL-STD-882E)</div>", unsafe_allow_html=True)
         
-        log_html = "<br>".join([f"&gt; {item}" for item in log_feed])
-        st.markdown(f"<div class='terminal-box'>{log_html}</div>", unsafe_allow_html=True)
+        haz_class = "CATEGORY 1 - CATASTROPHIC" if metrics['severity'] == "RED" else ("CATEGORY 2 - CRITICAL" if metrics['severity'] == "AMBER" else "CATEGORY 4 - NEGLIGIBLE")
+        lru_item = "ROTAX 915iS C-HEAD P/N 995-830 & RADIATOR CORE" if current_row['cht_actual'] > 135 else ("OIL PRESSURE REGULATOR ASSY P/N 856-112" if current_row['oil_press_actual'] < 2.0 else "ALL PROPULSION UNITS NOMINAL")
+        action_plan = "MANDATORY STRIP-DOWN LEVEL 3 INSPECTION BEFORE NEXT SORTIE" if metrics['health_index'] < 50 else "STANDARD 25-HOUR TURNAROUND LINE CHECK"
 
-    with col_deb:
-        st.markdown("<div style='color: #00f0ff; font-weight: bold;'>STANAG 4586 D-BUS PACKET FRAME STREAM</div>", unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class='nato-card'>
+            <b>NATO DOCUMENT REF:</b> <code>STANAG-4586-AIR-2026-0923</code><br>
+            <b>AIRCRAFT REG:</b> <code>UAV-MALE-01 [AEROTWIN TAIL #8841]</code><br>
+            <b>PROPULSION UNIT:</b> <code>ROTAX 914/915 TURBOCHARGED PISTON</code><br>
+            <b>HAZARD SEVERITY LEVEL:</b> <span style='color: {"#ff003c" if metrics["severity"]=="RED" else "#00ff66"};'><b>{haz_class}</b></span><br>
+            <b>SUSPECT LINE REPLACEABLE UNIT (LRU):</b> <code>{lru_item}</code><br>
+            <b>ENGINE HEALTH INDEX AT INCIDENT:</b> <code>{metrics['health_index']}%</code><br>
+            <b>CALCULATED RUN-TO-FAILURE HORIZON:</b> <code>{metrics['rul_hours']} Flight Hours</code><br>
+            <b>MAINTENANCE CREW DIRECTIVE:</b> <span style='color: #00f0ff;'><b>{action_plan}</b></span>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_rep2:
+        st.markdown("<div style='color: #00f0ff; font-weight: bold;'>BLACKBOX TELEMETRY LOG & HEX DUMP</div>", unsafe_allow_html=True)
         rpm_hex = f"{int(current_row['rpm']):04X}"
         cht_hex = f"{int(current_row['cht_actual'] * 10):04X}"
         alt_hex = f"{int(current_row['altitude_m']):04X}"
@@ -675,22 +774,21 @@ with tab6:
 
         st.markdown(f"""
         <div class='packet-hex'>
-            <b>RAW STREAM:</b> <code>{stanag_packet}</code><br>
-            <b>STANAG MSG ID:</b> <code>0x012C [PROPULSION_STATUS]</code><br>
-            <b>PAYLOAD CRC:</b> <code>0x9B7A (VALID)</code>
+            <b>STANAG 4586 FRAME:</b> <code>{stanag_packet}</code><br>
+            <b>MSG CLASS:</b> <code>0x012C [PROPULSION_STATUS]</code><br>
+            <b>CHECKSUM CRC-32:</b> <code>0x9B7A [VERIFIED]</code>
         </div>
         """, unsafe_allow_html=True)
 
-        st.markdown("<div style='margin-top: 15px;'><b>BLACKBOX TELEMETRY LOG</b></div>", unsafe_allow_html=True)
         csv_export = df.iloc[:t_idx+1].to_csv(index=False).encode('utf-8')
         st.download_button(
-            label="📥 EXPORT ACTIVE TELEMETRY (.CSV)",
+            label="📥 EXPORT OFFICIAL MISSION BLACKBOX (.CSV)",
             data=csv_export,
-            file_name=f"UAV_AeroTwin_{scenario}_MET_{t_idx}.csv",
+            file_name=f"NATO_Incident_{scenario}_MET_{t_idx}.csv",
             mime="text/csv"
         )
 
-# Execution Flow Loop
+# Loop Execution Handler
 if source_mode == "🔴 LIVE HARDWARE UDP LINK (PORT 14550)" and transmitter_daemon.is_running:
     time.sleep(0.5)
     st.rerun()
