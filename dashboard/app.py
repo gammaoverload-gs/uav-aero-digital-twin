@@ -26,6 +26,67 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# -------------------------------------------------------------
+# AUTO-SPAWN INTERNAL TELEMETRY BRIDGE (NO SEPARATE TERMINAL NEEDED)
+# -------------------------------------------------------------
+@st.cache_resource
+def start_embedded_bridge():
+    def run_server():
+        import uvicorn
+        from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+        from fastapi.middleware.cors import CORSMiddleware
+
+        bridge_app = FastAPI()
+        bridge_app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+
+        shared_state = {
+            "pitch": 0.0, "roll": 0.0, "heading": 0, "airspeed": 0, "altitude": 0,
+            "rpm": 1200, "throttle": 0, "cht": 102, "egt": 680, "g_force": 1.0,
+            "flight_mode": "MANUAL", "status": "Datalink Online"
+        }
+        clients = set()
+
+        @bridge_app.websocket("/ws/telemetry")
+        async def ws_endpoint(ws: WebSocket):
+            await ws.accept()
+            clients.add(ws)
+            try:
+                while True:
+                    msg = await ws.receive_text()
+                    data = json.loads(msg)
+                    shared_state.update(data)
+                    for c in clients.copy():
+                        if c != ws:
+                            try:
+                                await c.send_text(json.dumps(shared_state))
+                            except Exception:
+                                clients.remove(c)
+            except WebSocketDisconnect:
+                clients.remove(ws)
+            except Exception:
+                if ws in clients: clients.remove(ws)
+
+        @bridge_app.get("/api/telemetry")
+        async def get_telem():
+            return shared_state
+
+        config = uvicorn.Config(bridge_app, host="127.0.0.1", port=8000, log_level="critical")
+        server = uvicorn.Server(config)
+        server.run()
+
+    t = threading.Thread(target=run_server, daemon=True)
+    t.start()
+    return True
+
+# Auto-start bridge in background
+start_embedded_bridge()
+
 # Background UAV Transmitter Daemon
 class EmbeddedUAVTransmitter:
     _instance = None
@@ -338,7 +399,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 1. BOOT SCREEN: 3D SKETCHFAB EMBEDDED VIEWER
+# 1. BOOT SCREEN: ZERO-DEPENDENCY 3D UAV ROTATING INSPECTION HANGAR
 # -------------------------------------------------------------
 if not st.session_state.boot_complete:
     st.markdown(f"""
@@ -347,15 +408,95 @@ if not st.session_state.boot_complete:
             ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v30.0
         </div>
         <div style='font-size: 0.78rem; color: #64748b; margin-bottom: 10px;'>
-            TACTICAL PROPULSION DIGITAL TWIN GROUND STATION // MALE UAV FLEET
+            TACTICAL PROPULSION DIGITAL TWIN GROUND STATION // TAPAS-201 FLEET
         </div>
     </div>
     """, unsafe_allow_html=True)
 
+    # Built-in High-Fidelity 3D DRDO UAV (No Sketchfab / No 404 Error)
     components.html("""
-    <div class="sketchfab-embed-wrapper" style="width: 100%; height: 420px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(0, 240, 255, 0.4); box-shadow: 0 0 35px rgba(0, 240, 255, 0.25);">
-        <iframe title="MQ-9 Reaper Drone" frameborder="0" allowfullscreen mozallowfullscreen="true" webkitallowfullscreen="true" allow="autoplay; fullscreen; xr-spatial-tracking" src="https://sketchfab.com/models/89668d90faec4f5195155f10b7548b26/embed?autostart=1&ui_infos=0&ui_watermark=0&ui_controls=1" style="width: 100%; height: 100%;"></iframe>
-    </div>
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body { margin: 0; overflow: hidden; background: #030712; }
+            #boot-canvas { width: 100%; height: 420px; border-radius: 8px; border: 1px solid rgba(0, 240, 255, 0.4); box-shadow: 0 0 35px rgba(0, 240, 255, 0.25); }
+            #boot-overlay {
+                position: absolute; bottom: 15px; left: 20px; color: #00f0ff;
+                font-family: monospace; font-size: 11px; letter-spacing: 1px; pointer-events: none;
+            }
+        </style>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    </head>
+    <body>
+        <div id="boot-overlay">&gt; SYSTEM STATUS: READY // TAPAS-201 MALE AIRFRAME CALIBRATED</div>
+        <canvas id="boot-canvas"></canvas>
+        <script>
+            const canvas = document.getElementById('boot-canvas');
+            const scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x030712, 0.025);
+            const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
+            camera.position.set(0, 5, 14);
+
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+
+            const ambLight = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(ambLight);
+            const dirLight = new THREE.DirectionalLight(0x00f0ff, 2.5);
+            dirLight.position.set(10, 20, 15);
+            scene.add(dirLight);
+
+            // Ground grid
+            const grid = new THREE.GridHelper(30, 30, 0x00f0ff, 0x1e293b);
+            grid.position.y = -2;
+            scene.add(grid);
+
+            // Detailed UAV Model
+            const uav = new THREE.Group();
+            scene.add(uav);
+
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.8 });
+            const darkMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5 });
+            const neonMat = new THREE.MeshBasicMaterial({ color: 0x00ff66 });
+
+            const fuse = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.3, 8.5, 16).rotateX(Math.PI/2), bodyMat);
+            uav.add(fuse);
+
+            const wings = new THREE.Mesh(new THREE.BoxGeometry(16, 0.1, 1.4), bodyMat);
+            wings.position.set(0, 0.1, 0.5);
+            uav.add(wings);
+
+            const v1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.8, 0.8), bodyMat);
+            v1.position.set(0.6, 0.6, -3.5); v1.rotation.z = -0.4;
+            uav.add(v1);
+            const v2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.8, 0.8), bodyMat);
+            v2.position.set(-0.6, 0.6, -3.5); v2.rotation.z = 0.4;
+            uav.add(v2);
+
+            const noseSensor = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), neonMat);
+            noseSensor.position.set(0, -0.2, 4.0);
+            uav.add(noseSensor);
+
+            const prop = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.2, 0.1), darkMat);
+            prop.position.set(0, 0.1, -4.3);
+            uav.add(prop);
+
+            let rot = 0;
+            function anim() {
+                requestAnimationFrame(anim);
+                rot += 0.012;
+                uav.rotation.y = rot;
+                uav.position.y = Math.sin(rot * 2) * 0.25;
+                prop.rotation.z += 0.35;
+                camera.lookAt(0, 0, 0);
+                renderer.render(scene, camera);
+            }
+            anim();
+        </script>
+    </body>
+    </html>
     """, height=440)
 
     c_b1, c_b2, c_b3 = st.columns([1, 1.6, 1])
@@ -445,7 +586,7 @@ if source_mode == "🎮 AEROTWIN 3D TACTICAL SIM (LIVE LINK)":
         df = pd.DataFrame([current_row])
         t_idx = 0
     else:
-        st.sidebar.warning("○ SIMULATOR BRIDGE OFFLINE (Run: python telemetry_bridge.py)")
+        st.sidebar.info("○ SIMULATOR READY (CLICK & FLY)")
         df = pd.DataFrame([{
             "timestamp": 0, "rpm": 1200, "cht_actual": 102.0, "cht_physics": 102.0,
             "oil_press_actual": 4.2, "oil_press_physics": 4.2,
@@ -598,7 +739,7 @@ with head_right:
                 st.rerun()
 
 if source_mode == "🎮 AEROTWIN 3D TACTICAL SIM (LIVE LINK)":
-    link_label = "🎮 3D SIMULATOR DATALINK [ACTIVE]" if sim_live_active else "○ 3D SIMULATOR STANDBY"
+    link_label = "🎮 3D SIMULATOR DATALINK [ACTIVE]" if sim_live_active else "○ 3D SIMULATOR CONNECTED"
 elif source_mode == "🔴 LIVE HARDWARE UDP LINK (PORT 14550)":
     link_label = f"🔴 UDP BUS ({len(df)} FRAMES)"
 else:
@@ -684,7 +825,6 @@ with col_pfd_main:
 
 with col_3d_test_flight:
     if source_mode == "🎮 AEROTWIN 3D TACTICAL SIM (LIVE LINK)":
-        # Render high-performance standalone 4-biome tactical combat flight simulator
         sim_path = os.path.join(os.path.dirname(__file__), "..", "tactical_sim.html")
         if not os.path.exists(sim_path):
             sim_path = "tactical_sim.html"
@@ -694,9 +834,8 @@ with col_3d_test_flight:
                 sim_html = f.read()
             components.html(sim_html, height=220, scrolling=False)
         except Exception:
-            st.error("Error reading tactical_sim.html file.")
+            st.error("tactical_sim.html not found.")
     else:
-        # Fallback to Pre-flight wireframe test flight window
         components.html("""
         <!DOCTYPE html>
         <html>
@@ -704,10 +843,7 @@ with col_3d_test_flight:
             <meta charset="utf-8">
             <style>
                 body { margin: 0; overflow: hidden; background: #040914; font-family: 'Share Tech Mono', monospace; }
-                #test-hud {
-                    position: absolute; top: 6px; left: 10px; color: #00ff66;
-                    font-size: 10px; letter-spacing: 1px; pointer-events: none; z-index: 10;
-                }
+                #test-hud { position: absolute; top: 6px; left: 10px; color: #00ff66; font-size: 10px; z-index: 10; }
                 #canvas-test { width: 100%; height: 170px; border-radius: 4px; border: 1px solid rgba(0, 240, 255, 0.35); }
             </style>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -719,8 +855,7 @@ with col_3d_test_flight:
                 const wrap = document.getElementById('canvas-test');
                 const scene = new THREE.Scene();
                 const camera = new THREE.PerspectiveCamera(45, wrap.clientWidth / wrap.clientHeight, 0.1, 500);
-                camera.position.set(0, 8, 22);
-                camera.lookAt(0, 0, 0);
+                camera.position.set(0, 8, 22); camera.lookAt(0, 0, 0);
 
                 const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
                 renderer.setSize(wrap.clientWidth, wrap.clientHeight);
@@ -728,14 +863,12 @@ with col_3d_test_flight:
 
                 const testDrone = new THREE.Group();
                 scene.add(testDrone);
-
                 const mWire = new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true });
                 testDrone.add(new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.3, 12, 10).rotateX(Math.PI/2), mWire));
                 const w = new THREE.Mesh(new THREE.BoxGeometry(12, 0.15, 2), mWire); w.position.z = 0.2; testDrone.add(w);
 
                 const grid = new THREE.GridHelper(40, 20, 0x00f0ff, 0x1e293b);
-                grid.position.y = -4;
-                scene.add(grid);
+                grid.position.y = -4; scene.add(grid);
 
                 let t = 0;
                 function runTestFlight() {
@@ -1236,7 +1369,7 @@ with tab8:
         </div>
         """, unsafe_allow_html=True)
 
-# Auto-refresh loop handling
+# Auto-refresh loop
 if source_mode == "🎮 AEROTWIN 3D TACTICAL SIM (LIVE LINK)":
     time.sleep(0.12)
     st.rerun()
