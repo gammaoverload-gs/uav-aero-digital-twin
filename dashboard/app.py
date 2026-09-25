@@ -330,16 +330,19 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# 1. BOOT SCREEN: NATIVE 3D DRDO TAPAS-201 ROTATING HANGAR
+# 1. BOOT SCREEN: HYPER-REALISTIC MILITARY 3D DRDO UAV INSPECTION SUITE
 # -------------------------------------------------------------
 if not st.session_state.boot_complete:
     st.markdown(f"""
-    <div style='max-width: 900px; margin: 15px auto; text-align: center;'>
-        <div style='font-family: Orbitron; font-size: clamp(1.2rem, 2.2vw, 1.7rem); color: {active_theme['primary']}; font-weight: 900; letter-spacing: 2px; margin-bottom: 4px;'>
+    <div style='max-width: 980px; margin: 0 auto; text-align: center;'>
+        <div style='display: inline-block; padding: 2px 14px; border: 1px solid rgba(0, 240, 255, 0.4); background: rgba(0, 240, 255, 0.08); border-radius: 20px; font-size: 11px; letter-spacing: 2px; color: #38bdf8; margin-bottom: 6px;'>
+            🇮🇳 AERONAUTICAL DEVELOPMENT ESTABLISHMENT // DRDO TACTICAL FLEET
+        </div>
+        <div style='font-family: Orbitron; font-size: clamp(1.4rem, 2.5vw, 2.2rem); color: #00f0ff; font-weight: 900; letter-spacing: 3px; text-shadow: 0 0 30px rgba(0, 240, 255, 0.5);'>
             ⚡ AEROTWIN DEFENSE OS // BOOT PROTOCOL v30.0
         </div>
-        <div style='font-size: 0.78rem; color: #64748b; margin-bottom: 10px;'>
-            TACTICAL PROPULSION DIGITAL TWIN GROUND STATION // DRDO TAPAS-201 FLEET
+        <div style='font-size: 0.8rem; color: #94a3b8; letter-spacing: 1px; margin-top: 2px; margin-bottom: 12px;'>
+            TACTICAL PROPULSION DIGITAL TWIN GROUND COMMAND // TAPAS-BH-201 MALE UAV
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -350,82 +353,288 @@ if not st.session_state.boot_complete:
     <head>
         <meta charset="utf-8">
         <style>
-            body { margin: 0; overflow: hidden; background: #030712; }
-            #boot-canvas { width: 100%; height: 420px; border-radius: 8px; border: 1px solid rgba(0, 240, 255, 0.4); box-shadow: 0 0 35px rgba(0, 240, 255, 0.25); }
-            #boot-overlay {
-                position: absolute; bottom: 15px; left: 20px; color: #00f0ff;
-                font-family: monospace; font-size: 11px; letter-spacing: 1px; pointer-events: none;
+            * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+            body { overflow: hidden; background: #010409; font-family: 'Share Tech Mono', monospace; }
+            
+            #boot-container {
+                position: relative; width: 100%; height: 490px;
+                border-radius: 8px; border: 1.5px solid rgba(0, 240, 255, 0.45);
+                box-shadow: 0 0 50px rgba(0, 240, 255, 0.2), inset 0 0 40px rgba(0, 0, 0, 0.8);
+                overflow: hidden; background: radial-gradient(circle at center, #071326 0%, #010409 95%);
             }
+            #canvas-3d { width: 100%; height: 100%; display: block; cursor: grab; }
+            #canvas-3d:active { cursor: grabbing; }
+
+            /* CRT Scanline Effect */
+            .scanlines {
+                position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+                background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+                background-size: 100% 4px; pointer-events: none; z-index: 5;
+            }
+
+            /* HUD Corners & Tech Brackets */
+            .corner-tl { position: absolute; top: 12px; left: 14px; width: 18px; height: 18px; border-top: 2px solid #00f0ff; border-left: 2px solid #00f0ff; z-index: 10; pointer-events: none; }
+            .corner-tr { position: absolute; top: 12px; right: 14px; width: 18px; height: 18px; border-top: 2px solid #00f0ff; border-right: 2px solid #00f0ff; z-index: 10; pointer-events: none; }
+            .corner-bl { position: absolute; bottom: 12px; left: 14px; width: 18px; height: 18px; border-bottom: 2px solid #00f0ff; border-left: 2px solid #00f0ff; z-index: 10; pointer-events: none; }
+            .corner-br { position: absolute; bottom: 12px; right: 14px; width: 18px; height: 18px; border-bottom: 2px solid #00f0ff; border-right: 2px solid #00f0ff; z-index: 10; pointer-events: none; }
+
+            .hud-meta-left {
+                position: absolute; top: 20px; left: 24px; color: #38bdf8;
+                font-size: 11px; line-height: 1.6; z-index: 10; pointer-events: none;
+                text-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+            }
+            .hud-meta-right {
+                position: absolute; top: 20px; right: 24px; color: #00ff66;
+                text-align: right; font-size: 11px; line-height: 1.6; z-index: 10; pointer-events: none;
+                text-shadow: 0 0 10px rgba(0, 255, 102, 0.4);
+            }
+            .hud-bottom-bar {
+                position: absolute; bottom: 16px; left: 24px; right: 24px;
+                display: flex; justify-content: space-between; align-items: center;
+                color: #94a3b8; font-size: 10px; z-index: 10; pointer-events: none;
+            }
+            .highlight-val { color: #ffffff; font-weight: bold; }
         </style>
+        <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     </head>
     <body>
-        <div id="boot-overlay">&gt; SYSTEM CALIBRATION: ONLINE // TAPAS-BH-201 MALE AIRFRAME NOMINAL</div>
-        <canvas id="boot-canvas"></canvas>
+        <div id="boot-container">
+            <div class="scanlines"></div>
+            <div class="corner-tl"></div><div class="corner-tr"></div>
+            <div class="corner-bl"></div><div class="corner-br"></div>
+
+            <div class="hud-meta-left">
+                <div>AIRFRAME: <span class="highlight-val">DRDO TAPAS-BH-201 [MALE UAV]</span></div>
+                <div>AVIONICS CORE: <span class="highlight-val">DUAL REDUNDANT FADEC 4.2</span></div>
+                <div>MISSION PAYLOAD: <span style="color:#00ff66; font-weight:bold;">EO/FLIR + HELINA ATGM</span></div>
+                <div>WINGSPAN / MTOW: <span class="highlight-val">20.6 M // 1,800 KG</span></div>
+            </div>
+
+            <div class="hud-meta-right">
+                <div>SYS STATUS: <span style="color:#00ff66; font-weight:bold;">READY FOR DISPATCH</span></div>
+                <div>SECURE LINK: <span class="highlight-val">MIL-STD-1553B VERIFIED</span></div>
+                <div>CALIBRATION: <span class="highlight-val">0.00% DRIFT [EKF OPTIMAL]</span></div>
+                <div>ROTATION SPEED: <span style="color:#38bdf8;">0.8 RPM [INSPECTION]</span></div>
+            </div>
+
+            <div class="hud-bottom-bar">
+                <div>&gt; SYSTEM CALIBRATION: ONLINE // TAPAS-BH-201 MALE AIRFRAME PRE-FLIGHT NOMINAL</div>
+                <div>CLICK & DRAG TO ROTATE 360° // SCROLL TO ZOOM</div>
+            </div>
+
+            <canvas id="canvas-3d"></canvas>
+        </div>
+
         <script>
-            const canvas = document.getElementById('boot-canvas');
+            const container = document.getElementById('boot-container');
+            const canvas = document.getElementById('canvas-3d');
             const scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x030712, 0.022);
-            const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
-            camera.position.set(0, 5, 14);
+            scene.fog = new THREE.FogExp2(0x010409, 0.024);
 
-            const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 150);
+            camera.position.set(0, 4.2, 14.5);
 
-            const ambLight = new THREE.AmbientLight(0xffffff, 0.85);
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+
+            // Cinematic Studio Lighting
+            const ambLight = new THREE.AmbientLight(0xffffff, 0.7);
             scene.add(ambLight);
-            const dirLight = new THREE.DirectionalLight(0x00f0ff, 2.5);
-            dirLight.position.set(10, 20, 15);
-            scene.add(dirLight);
 
-            const grid = new THREE.GridHelper(30, 30, 0x00f0ff, 0x1e293b);
-            grid.position.y = -2;
-            scene.add(grid);
+            const keyCyan = new THREE.DirectionalLight(0x00f0ff, 3.2);
+            keyCyan.position.set(12, 18, 10);
+            scene.add(keyCyan);
 
-            const uav = new THREE.Group();
-            scene.add(uav);
+            const rimAmber = new THREE.DirectionalLight(0xf59e0b, 2.0);
+            rimAmber.position.set(-15, -6, -12);
+            scene.add(rimAmber);
 
-            const bodyMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.8 });
-            const darkMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5 });
-            const neonMat = new THREE.MeshBasicMaterial({ color: 0x00ff66 });
+            const blueFloorGlow = new THREE.PointLight(0x00aaff, 3, 20);
+            blueFloorGlow.position.set(0, -2, 0);
+            scene.add(blueFloorGlow);
 
-            const fuse = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.3, 8.5, 16).rotateX(Math.PI/2), bodyMat);
-            uav.add(fuse);
+            // Cyberpunk Floor Grid & Rings
+            const floorGrid = new THREE.GridHelper(32, 32, 0x00f0ff, 0x1e293b);
+            floorGrid.position.y = -2.2;
+            scene.add(floorGrid);
 
-            const wings = new THREE.Mesh(new THREE.BoxGeometry(16, 0.1, 1.4), bodyMat);
-            wings.position.set(0, 0.1, 0.5);
-            uav.add(wings);
+            const ringGeo = new THREE.RingGeometry(5.5, 5.65, 64).rotateX(-Math.PI / 2);
+            const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
+            const laserRing = new THREE.Mesh(ringGeo, ringMat);
+            laserRing.position.y = -2.18;
+            scene.add(laserRing);
 
-            const v1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.8, 0.8), bodyMat);
-            v1.position.set(0.6, 0.6, -3.5); v1.rotation.z = -0.4;
-            uav.add(v1);
-            const v2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.8, 0.8), bodyMat);
-            v2.position.set(-0.6, 0.6, -3.5); v2.rotation.z = 0.4;
-            uav.add(v2);
+            // ---------------------------------------------------------
+            // HIGH-FIDELITY DRDO TAPAS-201 3D AIRFRAME
+            // ---------------------------------------------------------
+            const uavRoot = new THREE.Group();
+            scene.add(uavRoot);
 
-            const noseSensor = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), neonMat);
-            noseSensor.position.set(0, -0.2, 4.0);
-            uav.add(noseSensor);
+            const compMat = new THREE.MeshStandardMaterial({ color: 0x272f3d, roughness: 0.35, metalness: 0.82 });
+            const darkAccent = new THREE.MeshStandardMaterial({ color: 0x0b0f17, roughness: 0.5, metalness: 0.9 });
+            const chromeMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.15, metalness: 0.95 });
+            const sensorLensMat = new THREE.MeshBasicMaterial({ color: 0x00ff66 });
+            const missileMat = new THREE.MeshStandardMaterial({ color: 0xdfe3e8, roughness: 0.3 });
 
-            const prop = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.2, 0.1), darkMat);
-            prop.position.set(0, 0.1, -4.3);
-            uav.add(prop);
+            // Streamlined Fuselage
+            const fuseCyl = new THREE.CylinderGeometry(0.58, 0.28, 9.8, 24);
+            fuseCyl.rotateX(Math.PI / 2);
+            const fuselage = new THREE.Mesh(fuseCyl, compMat);
+            fuselage.scale.set(1.0, 1.15, 1.0);
+            uavRoot.add(fuselage);
 
-            let rot = 0;
-            function anim() {
-                requestAnimationFrame(anim);
-                rot += 0.012;
-                uav.rotation.y = rot;
-                uav.position.y = Math.sin(rot * 2) * 0.25;
-                prop.rotation.z += 0.35;
+            // Nose Radome Dome (Bulbous Head for SATCOM)
+            const noseGeo = new THREE.SphereGeometry(0.72, 24, 24);
+            noseGeo.scale(0.85, 0.95, 1.4);
+            const noseDome = new THREE.Mesh(noseGeo, compMat);
+            noseDome.position.set(0, 0.22, 3.8);
+            uavRoot.add(noseDome);
+
+            // High-Aspect Ratio Wings
+            const wings = new THREE.Mesh(new THREE.BoxGeometry(19.2, 0.11, 1.45), compMat);
+            wings.position.set(0, 0.18, 0.6);
+            uavRoot.add(wings);
+
+            // Winglets (Wingtip stabilizers)
+            [-9.55, 9.55].forEach(x => {
+                const winglet = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.85, 0.5), darkAccent);
+                winglet.position.set(x, 0.5, 0.6);
+                winglet.rotation.z = x > 0 ? -0.25 : 0.25;
+                uavRoot.add(winglet);
+            });
+
+            // Twin Engine Nacelles (Mounted on wings)
+            const props = [];
+            [-2.6, 2.6].forEach(x => {
+                const nacelle = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.28, 2.2, 16).rotateX(Math.PI / 2), darkAccent);
+                nacelle.position.set(x, 0.05, 0.4);
+                uavRoot.add(nacelle);
+
+                // Spinners & 3-Blade Props
+                const pGroup = new THREE.Group();
+                pGroup.position.set(x, 0.05, -0.75);
+                const hub = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 12), chromeMat);
+                pGroup.add(hub);
+
+                for (let i = 0; i < 3; i++) {
+                    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.25, 0.12), darkAccent);
+                    blade.rotation.z = (i * Math.PI * 2) / 3;
+                    pGroup.add(blade);
+                }
+                uavRoot.add(pGroup);
+                props.push(pGroup);
+            });
+
+            // Inverted V-Tail Stabilizers (Signature TAPAS Design)
+            const vTailL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.3, 0.9), compMat);
+            vTailL.position.set(0.78, 0.72, -4.2);
+            vTailL.rotation.z = -0.52;
+            const vTailR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.3, 0.9), compMat);
+            vTailR.position.set(-0.78, 0.72, -4.2);
+            vTailR.rotation.z = 0.52;
+            uavRoot.add(vTailL, vTailR);
+
+            // Ventral Rudder Fin
+            const vFin = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.1, 0.9), compMat);
+            vFin.position.set(0, -0.65, -4.1);
+            uavRoot.add(vFin);
+
+            // Underbelly Gyro-Stabilized Electro-Optical / FLIR Turret
+            const eoGimbal = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 16), darkAccent);
+            eoGimbal.position.set(0, -0.48, 2.8);
+            const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.15, 12).rotateX(Math.PI / 2), sensorLensMat);
+            lens.position.set(0, -0.55, 3.1);
+            uavRoot.add(eoGimbal, lens);
+
+            // Underwing Helina ATGM Missile Pylons
+            [-4.8, -3.8, 3.8, 4.8].forEach(x => {
+                const pylon = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.35, 0.75), darkAccent);
+                pylon.position.set(x, -0.1, 0.6);
+                const missile = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.4, 12).rotateX(Math.PI / 2), missileMat);
+                missile.position.set(x, -0.32, 0.6);
+                uavRoot.add(pylon, missile);
+            });
+
+            // ---------------------------------------------------------
+            // SMOOTH 360° MOUSE ORBIT CONTROLS
+            // ---------------------------------------------------------
+            let isDragging = false, prevMouseX = 0, prevMouseY = 0;
+            let targetRotY = 0, targetRotX = 0.1;
+            let curRotY = 0, curRotX = 0.1;
+            let camDist = 14.5;
+
+            window.addEventListener('mousedown', e => {
+                isDragging = true;
+                prevMouseX = e.clientX;
+                prevMouseY = e.clientY;
+            });
+            window.addEventListener('mouseup', () => { isDragging = false; });
+            window.addEventListener('mousemove', e => {
+                if (isDragging) {
+                    let deltaX = e.clientX - prevMouseX;
+                    let deltaY = e.clientY - prevMouseY;
+                    prevMouseX = e.clientX;
+                    prevMouseY = e.clientY;
+
+                    targetRotY += deltaX * 0.008;
+                    targetRotX += deltaY * 0.006;
+                    targetRotX = Math.max(-0.4, Math.min(0.85, targetRotX));
+                }
+            });
+            window.addEventListener('wheel', e => {
+                camDist += e.deltaY * 0.012;
+                camDist = Math.max(8.0, Math.min(22.0, camDist));
+            });
+
+            // ---------------------------------------------------------
+            // RENDER LOOP
+            // ---------------------------------------------------------
+            let clock = 0;
+            function animate() {
+                requestAnimationFrame(animate);
+                clock += 0.02;
+
+                if (!isDragging) {
+                    targetRotY += 0.0065; // Smooth idle turnaround
+                }
+
+                curRotY = THREE.MathUtils.lerp(curRotY, targetRotY, 0.07);
+                curRotX = THREE.MathUtils.lerp(curRotX, targetRotX, 0.07);
+
+                uavRoot.rotation.y = curRotY;
+                uavRoot.rotation.x = curRotX;
+                uavRoot.position.y = Math.sin(clock * 1.8) * 0.22; // Aerodynamic hover bobbing
+
+                // Spin twin turboprops
+                props.forEach((p, idx) => {
+                    p.rotation.z += (idx === 0 ? 0.45 : -0.45);
+                });
+
+                // Pulse LiDAR Ring
+                laserRing.scale.setScalar(1.0 + Math.sin(clock * 2.2) * 0.08);
+                ringMat.opacity = 0.35 + Math.sin(clock * 2.2) * 0.25;
+
+                // Dynamic Camera
+                camera.position.z = THREE.MathUtils.lerp(camera.position.z, camDist, 0.08);
                 camera.lookAt(0, 0, 0);
+
                 renderer.render(scene, camera);
             }
-            anim();
+            animate();
+
+            window.addEventListener('resize', () => {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            });
         </script>
     </body>
     </html>
-    """, height=440)
+    """, height=505)
 
     c_b1, c_b2, c_b3 = st.columns([1, 1.6, 1])
     with c_b2:
