@@ -492,7 +492,7 @@ if source_mode == "🎮 AEROTWIN 3D TACTICAL SIM (LIVE LINK)":
     t_sec = st.session_state.sim_clock
     
     # Procedural real-time flight telemetry sync
-    sim_rpm = 5120.0 + math_sin = np.sin(t_sec * 0.15) * 180.0
+    sim_rpm = 5120.0 + float(np.sin(t_sec * 0.15) * 180.0)
     sim_cht = 114.5 + np.sin(t_sec * 0.08) * 4.2
     sim_alt = 2450.0 + np.sin(t_sec * 0.05) * 85.0
     sim_pitch = round(float(np.sin(t_sec * 0.2) * 3.5), 1)
