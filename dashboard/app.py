@@ -595,7 +595,7 @@ def make_pfd_figure(pitch, cur_spd, cur_alt, height=170):
     fig_pfd.add_shape(type="circle", x0=-0.5, y0=-0.5, x1=0.5, y1=0.5, line=dict(color="#facc15", width=2))
 
     fig_pfd.update_layout(
-        title={'text": "<b>TACTICAL GLASS PFD</b>", 'font': {'size': 11, 'family': 'Orbitron', 'color': active_theme['primary']}},
+        title={'text': "<b>TACTICAL GLASS PFD</b>", 'font': {'size': 11, 'family': 'Orbitron', 'color': active_theme['primary']}},
         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(8,16,32,0.95)',
         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-10, 10]),
         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False, range=[-10, 10]),
