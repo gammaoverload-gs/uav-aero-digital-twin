@@ -1443,11 +1443,8 @@ with tab8:
         </div>
         """, unsafe_allow_html=True)
 
-# Loop Refresh Logic
-if source_mode == "🎮 AEROTWIN 3D TACTICAL SIM (LIVE LINK)":
-    time.sleep(0.35)
-    st.rerun()
-elif source_mode == "🔴 LIVE HARDWARE UDP LINK (PORT 14550)" and transmitter_daemon.is_running:
+# Loop Refresh Logic - Do NOT rerun for 3D Sim! It runs inside its own WebGL frame loop!
+if source_mode == "🔴 LIVE HARDWARE UDP LINK (PORT 14550)" and transmitter_daemon.is_running:
     time.sleep(0.5)
     st.rerun()
 elif source_mode == "MISSION REPLAY (SYNTHETIC)" and st.session_state.is_playing:
