@@ -11,6 +11,7 @@ import pandas as pd  # type: ignore
 import plotly.graph_objects as go  # type: ignore
 import streamlit as st  # type: ignore
 import streamlit.components.v1 as components  # type: ignore
+import requests
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -148,6 +149,15 @@ if "telemetry_bridge" not in st.session_state:
     st.session_state.telemetry_bridge = DroneTelemetryBridge()
 
 transmitter_daemon = EmbeddedUAVTransmitter.get_instance()
+
+def fetch_sim_telemetry():
+    try:
+        r = requests.get("http://127.0.0.1:8000/api/telemetry", timeout=0.15)
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        pass
+    return None
 
 THEMES = {
     "CYBER CYAN (DEFENSE)": {
@@ -396,12 +406,62 @@ if st.sidebar.button("🔄 RE-RUN 3D BOOT SEQUENCE"):
 st.sidebar.markdown("---")
 source_mode = st.sidebar.radio(
     "TELEMETRY INGESTION MODE",
-    ["MISSION REPLAY (SYNTHETIC)", "🔴 LIVE HARDWARE UDP LINK (PORT 14550)"]
+    [
+        "MISSION REPLAY (SYNTHETIC)",
+        "🔴 LIVE HARDWARE UDP LINK (PORT 14550)",
+        "🎮 AEROTWIN 3D TACTICAL SIM (LIVE LINK)"
+    ]
 )
 
 prognostics = EnginePrognostics()
+sim_live_active = False
 
-if source_mode == "🔴 LIVE HARDWARE UDP LINK (PORT 14550)":
+if source_mode == "🎮 AEROTWIN 3D TACTICAL SIM (LIVE LINK)":
+    st.sidebar.markdown("<div style='font-family: Orbitron; font-size: 0.8rem; color: #00f0ff;'>3D FLIGHT SIMULATOR BRIDGE</div>", unsafe_allow_html=True)
+    sim_data = fetch_sim_telemetry()
+    
+    if sim_data:
+        sim_live_active = True
+        st.sidebar.success(f"● 3D FLIGHT TELEMETRY LINKED\n[Speed: {sim_data.get('airspeed', 0)} KCAS | Alt: {sim_data.get('altitude', 0)}m]")
+        current_row = {
+            "timestamp": int(time.time()) % 1000,
+            "rpm": float(sim_data.get("rpm", 5000.0)),
+            "cht_actual": float(sim_data.get("cht", 112.0)),
+            "cht_physics": 110.0 + (float(sim_data.get("rpm", 5000.0)) - 4800) * 0.02,
+            "oil_press_actual": 4.2 - (float(sim_data.get("throttle", 0)) / 100.0) * 0.5,
+            "oil_press_physics": 4.2,
+            "oil_temp_actual": 92.0 + (float(sim_data.get("cht", 112.0)) - 110.0) * 0.25,
+            "oil_temp_physics": 90.0,
+            "egt_actual": float(sim_data.get("egt", 810.0)),
+            "egt_physics": 810.0,
+            "map_inhg": 30.0 + (float(sim_data.get("throttle", 0)) / 100.0) * 6.0,
+            "vibration_rms": float(sim_data.get("g_force", 1.0)),
+            "altitude_m": float(sim_data.get("altitude", 2200.0)),
+            "fuel_flow": 24.5 + (float(sim_data.get("rpm", 5000.0)) - 4800) * 0.008,
+            "pitch_deg": float(sim_data.get("pitch", 0.0)),
+            "roll_deg": float(sim_data.get("roll", 0.0)),
+            "flight_phase": sim_data.get("flight_mode", "CRUISE")
+        }
+        df = pd.DataFrame([current_row])
+        t_idx = 0
+    else:
+        st.sidebar.warning("○ SIMULATOR BRIDGE OFFLINE (Run: python telemetry_bridge.py)")
+        df = pd.DataFrame([{
+            "timestamp": 0, "rpm": 1200, "cht_actual": 102.0, "cht_physics": 102.0,
+            "oil_press_actual": 4.2, "oil_press_physics": 4.2,
+            "oil_temp_actual": 90.0, "oil_temp_physics": 90.0,
+            "egt_actual": 680.0, "egt_physics": 680.0, "map_inhg": 29.92,
+            "vibration_rms": 1.0, "altitude_m": 0.0, "fuel_flow": 12.0,
+            "pitch_deg": 0.0, "roll_deg": 0.0,
+            "flight_phase": "STANDBY"
+        }])
+        current_row = df.iloc[0].copy()
+        t_idx = 0
+
+    scenario = "SIMULATOR_LIVE_STREAM"
+    ew_tamper = False
+
+elif source_mode == "🔴 LIVE HARDWARE UDP LINK (PORT 14550)":
     st.sidebar.markdown("<div style='font-family: Orbitron; font-size: 0.8rem; color: #00ff66;'>ONBOARD UAV TRANSMITTER</div>", unsafe_allow_html=True)
     
     col_tx1, col_tx2 = st.sidebar.columns(2)
@@ -537,17 +597,26 @@ with head_right:
                 st.session_state.caution_silenced = True
                 st.rerun()
 
-link_label = f"🔴 UDP BUS ({len(df)} FRAMES)" if source_mode != "MISSION REPLAY (SYNTHETIC)" else "● REPLAY ENCRYPTED"
+if source_mode == "🎮 AEROTWIN 3D TACTICAL SIM (LIVE LINK)":
+    link_label = "🎮 3D SIMULATOR DATALINK [ACTIVE]" if sim_live_active else "○ 3D SIMULATOR STANDBY"
+elif source_mode == "🔴 LIVE HARDWARE UDP LINK (PORT 14550)":
+    link_label = f"🔴 UDP BUS ({len(df)} FRAMES)"
+else:
+    link_label = "● REPLAY ENCRYPTED"
+
 squawk_status = "<span style='color:#ef4444; font-weight:bold;'>7700 [EMERGENCY]</span>" if metrics["severity"] == "RED" else "<span style='color:#10b981;'>4421 [CAP]</span>"
+
+display_spd = int(current_row['rpm'] * 0.023) if source_mode == "🎮 AEROTWIN 3D TACTICAL SIM (LIVE LINK)" and sim_live_active else (115 if not st.session_state.limp_mode else 92)
 
 st.markdown(f"""
 <div class='telemetry-strip'>
     <div>ZULU: <span class='telemetry-val'>{zulu_now}</span></div>
     <div>VIEWPORT: <span class='telemetry-val'>{st.session_state.viewport_mode}</span></div>
+    <div>LINK: <span class='telemetry-val'>{link_label}</span></div>
     <div>IFF SQUAWK: {squawk_status}</div>
     <div>REGIME: <span class='telemetry-val'>{current_row['flight_phase']}</span></div>
     <div>ALT: <span class='telemetry-val'>{current_row['altitude_m']} M</span></div>
-    <div>AIRSPEED: <span class='telemetry-val'>{115 if not st.session_state.limp_mode else 92} KCAS</span></div>
+    <div>AIRSPEED: <span class='telemetry-val'>{display_spd} KCAS</span></div>
     <div>ISA OAT: <span class='telemetry-val'>{round(15 - 0.0065 * current_row['altitude_m'], 1)}°C</span></div>
     <div>MISSION CLOCK: <span class='telemetry-val'>T+{current_row['timestamp']:03.0f}s</span></div>
 </div>
@@ -604,77 +673,86 @@ def make_pfd_figure(pitch, cur_spd, cur_alt, height=170):
     return fig_pfd
 
 pitch = float(current_row['pitch_deg'])
-cur_spd = 115 if not st.session_state.limp_mode else 92
+cur_spd = display_spd
 cur_alt = int(current_row['altitude_m'])
 
-# NEW: Live 3D Pre-Flight Test Flight Window Integration in Main GCS Dashboard
+# Dual Split Cockpit Container: PFD & Airspace Simulator
 col_pfd_main, col_3d_test_flight = st.columns([1.3, 1.2])
 
 with col_pfd_main:
-    if not is_mobile:
-        st.plotly_chart(make_pfd_figure(pitch, cur_spd, cur_alt, height=170), use_container_width=True, config={'displayModeBar': False})
-    else:
-        st.plotly_chart(make_pfd_figure(pitch, cur_spd, cur_alt, height=150), use_container_width=True, config={'displayModeBar': False})
+    st.plotly_chart(make_pfd_figure(pitch, cur_spd, cur_alt, height=170 if not is_mobile else 150), use_container_width=True, config={'displayModeBar': False})
 
 with col_3d_test_flight:
-    # Embedded 3D Test Flight Window (Real-time Pre-Flight Airspace Simulator)
-    components.html("""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <style>
-            body { margin: 0; overflow: hidden; background: #040914; font-family: 'Share Tech Mono', monospace; }
-            #test-hud {
-                position: absolute; top: 6px; left: 10px; color: #00ff66;
-                font-size: 10px; letter-spacing: 1px; pointer-events: none; z-index: 10;
-            }
-            #canvas-test { width: 100%; height: 170px; border-radius: 4px; border: 1px solid rgba(0, 240, 255, 0.35); }
-        </style>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    </head>
-    <body>
-        <div id="test-hud">&gt; PRE-FLIGHT TEST AIRSPACE [ACTIVE 3D]</div>
-        <div id="canvas-test"></div>
-        <script>
-            const wrap = document.getElementById('canvas-test');
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(45, wrap.clientWidth / wrap.clientHeight, 0.1, 500);
-            camera.position.set(0, 8, 22);
-            camera.lookAt(0, 0, 0);
+    if source_mode == "🎮 AEROTWIN 3D TACTICAL SIM (LIVE LINK)":
+        # Render high-performance standalone 4-biome tactical combat flight simulator
+        sim_path = os.path.join(os.path.dirname(__file__), "..", "tactical_sim.html")
+        if not os.path.exists(sim_path):
+            sim_path = "tactical_sim.html"
+            
+        try:
+            with open(sim_path, "r", encoding="utf-8") as f:
+                sim_html = f.read()
+            components.html(sim_html, height=220, scrolling=False)
+        except Exception:
+            st.error("Error reading tactical_sim.html file.")
+    else:
+        # Fallback to Pre-flight wireframe test flight window
+        components.html("""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body { margin: 0; overflow: hidden; background: #040914; font-family: 'Share Tech Mono', monospace; }
+                #test-hud {
+                    position: absolute; top: 6px; left: 10px; color: #00ff66;
+                    font-size: 10px; letter-spacing: 1px; pointer-events: none; z-index: 10;
+                }
+                #canvas-test { width: 100%; height: 170px; border-radius: 4px; border: 1px solid rgba(0, 240, 255, 0.35); }
+            </style>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+        </head>
+        <body>
+            <div id="test-hud">&gt; PRE-FLIGHT TEST AIRSPACE [ACTIVE 3D]</div>
+            <div id="canvas-test"></div>
+            <script>
+                const wrap = document.getElementById('canvas-test');
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(45, wrap.clientWidth / wrap.clientHeight, 0.1, 500);
+                camera.position.set(0, 8, 22);
+                camera.lookAt(0, 0, 0);
 
-            const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-            renderer.setSize(wrap.clientWidth, wrap.clientHeight);
-            wrap.appendChild(renderer.domElement);
+                const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+                wrap.appendChild(renderer.domElement);
 
-            const testDrone = new THREE.Group();
-            scene.add(testDrone);
+                const testDrone = new THREE.Group();
+                scene.add(testDrone);
 
-            const mWire = new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true });
-            testDrone.add(new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.3, 12, 10).rotateX(Math.PI/2), mWire));
-            const w = new THREE.Mesh(new THREE.BoxGeometry(12, 0.15, 2), mWire); w.position.z = 0.2; testDrone.add(w);
+                const mWire = new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true });
+                testDrone.add(new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.3, 12, 10).rotateX(Math.PI/2), mWire));
+                const w = new THREE.Mesh(new THREE.BoxGeometry(12, 0.15, 2), mWire); w.position.z = 0.2; testDrone.add(w);
 
-            // Terrain grid
-            const grid = new THREE.GridHelper(40, 20, 0x00f0ff, 0x1e293b);
-            grid.position.y = -4;
-            scene.add(grid);
+                const grid = new THREE.GridHelper(40, 20, 0x00f0ff, 0x1e293b);
+                grid.position.y = -4;
+                scene.add(grid);
 
-            let t = 0;
-            function runTestFlight() {
-                requestAnimationFrame(runTestFlight);
-                t += 0.03;
-                testDrone.position.x = Math.sin(t) * 6;
-                testDrone.position.z = Math.cos(t * 0.7) * 4;
-                testDrone.position.y = Math.sin(t * 2) * 1.5;
-                testDrone.rotation.z = Math.cos(t) * 0.25;
-                testDrone.rotation.y = t;
-                renderer.render(scene, camera);
-            }
-            runTestFlight();
-        </script>
-    </body>
-    </html>
-    """, height=180)
+                let t = 0;
+                function runTestFlight() {
+                    requestAnimationFrame(runTestFlight);
+                    t += 0.03;
+                    testDrone.position.x = Math.sin(t) * 6;
+                    testDrone.position.z = Math.cos(t * 0.7) * 4;
+                    testDrone.position.y = Math.sin(t * 2) * 1.5;
+                    testDrone.rotation.z = Math.cos(t) * 0.25;
+                    testDrone.rotation.y = t;
+                    renderer.render(scene, camera);
+                }
+                runTestFlight();
+            </script>
+        </body>
+        </html>
+        """, height=180)
 
 # Gauges Strip
 g1, g2, g3, g4 = st.columns(4)
@@ -1158,7 +1236,11 @@ with tab8:
         </div>
         """, unsafe_allow_html=True)
 
-if source_mode == "🔴 LIVE HARDWARE UDP LINK (PORT 14550)" and transmitter_daemon.is_running:
+# Auto-refresh loop handling
+if source_mode == "🎮 AEROTWIN 3D TACTICAL SIM (LIVE LINK)":
+    time.sleep(0.12)
+    st.rerun()
+elif source_mode == "🔴 LIVE HARDWARE UDP LINK (PORT 14550)" and transmitter_daemon.is_running:
     time.sleep(0.5)
     st.rerun()
 elif source_mode == "MISSION REPLAY (SYNTHETIC)" and st.session_state.is_playing:
