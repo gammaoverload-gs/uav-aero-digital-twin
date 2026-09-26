@@ -17,43 +17,17 @@ Traditional GCS systems operate **reactively** using fixed static thresholds. **
 
 ---
 
-## ⚙️ System Architecture
+## ⚙️ System Architecture Pipeline
 
-```text
-+---------------------------------------------------------------------------------------+
-|                                DATA INGESTION LAYERS                                  |
-|   +--------------------------+   +--------------------------+   +-------------------+ |
-|   | 3D Combat Sim WebSocket  |   | UDP CAN/1553B Hardware   |   | Synthetic Mission | |
-|   | (Dual Controls / 60 FPS) |   | Port 14550 Broadcast     |   | Replay Engine     | |
-|   +------------+-------------+   +------------+-------------+   +---------+---------+ |
-+----------------\------------------------------|---------------------------/-----------+
-                  \                             |                          /
-                   v                            v                         v
-+---------------------------------------------------------------------------------------+
-|                            PHYSICS-INFORMED TWIN ENGINE                               |
-|   • ISA Atmosphere Lapse Rate Engine: P_amb(h), T_amb(h), air density rho(h)          |
-|   • Otto Thermodynamic Indicator: Real-time P-V Loop, IMEP & Thermal Efficiency       |
-|   • Turbocharger Dynamic Map: Compressor Pressure Ratio vs Corrected Mass Flow        |
-+---------------------------------------+-----------------------------------------------+
-                                        |
-                                        v
-+---------------------------------------------------------------------------------------+
-|                          DIAGNOSTIC & PROGNOSTIC CORE (PHM)                           |
-|   • Extended Kalman Filter (EKF): Dynamic residual tracking with ±2σ uncertainty      |
-|   • Explainable AI (XAI): Waterfall attribution for CHT drift, oil loss & knock       |
-|   • Prognostics: Dynamic Remaining Useful Life (RUL in flight hours) calculation      |
-|   • Electronic Warfare Defense: Kalman innovation gating against sensor spoofing      |
-+---------------------------------------+-----------------------------------------------+
-                                        |
-                                        v
-+---------------------------------------------------------------------------------------+
-|                           TACTICAL OPERATOR COMMAND HMI                               |
-|   • AAA Three.js 3D UAV Hangar: 360° mouse orbit pre-flight inspection suite          |
-|   • Interactive Flight Sim: 4 procedural biomes (Pokhran, Siachen, SAM Base, LAC)     |
-|   • Glass Primary Flight Display (PFD): Artificial horizon, airspeed & altitude tape  |
-|   • Pilot Quick-Action Dock: Limp-Home throttle, mixture quench & stores jettison     |
-|   • NATO STANAG 4586 & MIL-STD-1553B Bus Monitor & Debrief Exporter                  |
-+---------------------------------------------------------------------------------------+
+| Stage | System Layer | Core Responsibilities & Components |
+| :--- | :--- | :--- |
+| **01** | **Data Ingestion** | 3D Combat Sim Telemetry • UDP Hardware Bus (Port 14550) • Synthetic Mission Replay Engine |
+| **02** | **Physics Twin Core** | ISA Altitude Lapse Model • Otto P-V Combustion Loop (IMEP & Thermal Efficiency) • Turbo Compressor Surge/Choke Dynamics |
+| **03** | **Health & Prognostics** | Extended Kalman Filter (EKF ±2σ Bounds) • Real-time RUL (Flight Hours) Estimation • Explainable AI (XAI) Waterfall Attribution |
+| **04** | **Electronic Warfare Defense** | Kalman Innovation Gating • Sensor Anomaly & Spoofing Spikes (+45°C) Autonomous Rejection |
+| **05** | **Tactical Operator GCS** | Native 3D DRDO UAV Inspection Suite • 4-Biome 60 FPS Combat Flight Simulator • Pilot ECL Contingency Quick-Dock |
+
+---
 
 ## 🚀 Key Functional Modules
 
@@ -64,12 +38,11 @@ Traditional GCS systems operate **reactively** using fixed static thresholds. **
 * **GTA Mini-Map Radar:** Real-time circular tactical radar tracking runway position, altitude, and bearing.
 
 ### 2. High-Fidelity 3D Boot Inspection Suite
-* Replaces static media with an interactive, native 3D DRDO TAPAS-201 MALE airframe.
-* Equipped with dual turboprop nacelles, inverted V-tail stabilizers, underbelly FLIR EO turret, underwing Helina ATGM pylons, CRT scanlines, and 360° mouse orbit controls.
+* Native 3D DRDO TAPAS-201 MALE airframe with twin turboprop nacelles, inverted V-tail stabilizers, underbelly FLIR EO turret, underwing Helina ATGM pylons, CRT scanlines, and 360° mouse orbit controls.
 
 ### 3. Physics-Informed Digital Twin (PINN/Hybrid Model)
 * **ISA Thermodynamic Modeling:** Real-time atmospheric density adjustments across variable altitudes.
-* **P-V Otto Combustion Cycle:** Live cylinder indicator diagram computing Indicated Mean Effective Pressure (IMEP) and thermal efficiency ($\eta_{th}$).
+* **P-V Otto Combustion Cycle:** Live cylinder indicator diagram computing Indicated Mean Effective Pressure (IMEP) and thermal efficiency.
 * **Turbo Compressor Map:** Live dynamic operating point tracking against empirical Surge and Choke boundary limits.
 
 ### 4. Prognostics, Diagnostics & Health Management (PHM)
@@ -78,7 +51,7 @@ Traditional GCS systems operate **reactively** using fixed static thresholds. **
 * **Dynamic RUL Prediction:** Real-time remaining flight endurance estimation based on wear rates and thermal drift.
 
 ### 5. Electronic Warfare (EW) Resiliency
-* **Autonomous Anti-Spoofing:** Demonstrates Kalman innovation gating that identifies and isolates hostile sensor tampering (e.g., +45°C thermal injection) while retaining baseline control.
+* **Autonomous Anti-Spoofing:** Kalman innovation gating that identifies and isolates hostile sensor tampering while retaining baseline flight control.
 
 ### 6. Closed-Loop Pilot Mitigation Dock
 * Tactical overrides enabling pilots to command **65% Limp Throttle**, **Fuel Enrichment Quench**, or **Jettison Stores** to arrest thermal runaway and preserve glide polar to recovery bases.
@@ -92,7 +65,7 @@ Traditional GCS systems operate **reactively** using fixed static thresholds. **
 | **Language** | Python 3.12 |
 | **GCS Dashboard** | Streamlit, Streamlit Components |
 | **3D Graphics & Shaders** | Three.js (r128), WebGL, HTML5 Canvas |
-| **Avionics & Plotting** | Plotly Graph Objects (Indicators, Heatmaps, 3D Core Scatter) |
+| **Avionics & Plotting** | Plotly Graph Objects |
 | **Physics & Math** | NumPy, Pandas, SciPy |
 | **Networking & Protocols** | UDP Sockets (Port 14550), MIL-STD-1553B Frame Emulation |
 
@@ -101,16 +74,6 @@ Traditional GCS systems operate **reactively** using fixed static thresholds. **
 ## 💻 Local Installation & Setup
 
 1. **Clone the repository:**
-   ```bash
-   git clone [https://github.com/gammaoverload-gs/uav-aero-digital-twin.git](https://github.com/gammaoverload-gs/uav-aero-digital-twin.git)
-   cd uav-aero-digital-twin
-Create and activate a virtual environment:Bash# Windows
-python -m venv venv
-.\venv\Scripts\activate
-
-# Linux / macOS
-python3 -m venv venv
-source venv/bin/activate
-Install required dependencies:Bashpip install -r requirements.txt
-Launch the Tactical GCS:Bashstreamlit run dashboard/app.py
-The application will open automatically at http://localhost:8501 with the embedded simulator and 3D suite fully operational.🎮 Operational Flight ControlsActionPrimary KeySecondary KeyPitch Down (Dive)↑ (Up Arrow)WPitch Up (Climb)↓ (Down Arrow)SBank Left (Roll)← (Left Arrow)ABank Right (Roll)→ (Right Arrow)DRudder (Yaw Left/Right)QEFADEC Boost ThrottleShift (Left/Right)—Aerodynamic BrakesSpace—Deploy Counter-FlaresF—Toggle FLIR ThermalV—Inspect DroneMouse Left Drag (Orbit)Mouse Wheel (Zoom)
+```cmd
+git clone [https://github.com/gammaoverload-gs/uav-aero-digital-twin.git](https://github.com/gammaoverload-gs/uav-aero-digital-twin.git)
+cd uav-aero-digital-twin
