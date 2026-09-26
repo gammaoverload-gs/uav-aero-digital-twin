@@ -77,3 +77,8 @@ Traditional GCS systems operate **reactively** using fixed static thresholds. **
 ```cmd
 git clone [https://github.com/gammaoverload-gs/uav-aero-digital-twin.git](https://github.com/gammaoverload-gs/uav-aero-digital-twin.git)
 cd uav-aero-digital-twin
+Create and activate virtual environment:DOSpython -m venv venv
+venv\Scripts\activate
+Install required dependencies:DOSpip install -r requirements.txt
+Launch the Tactical GCS:DOSstreamlit run dashboard/app.py
+🎮 Operational Flight ControlsActionPrimary KeySecondary KeyPitch Down (Dive)↑ (Up Arrow)WPitch Up (Climb)↓ (Down Arrow)SBank Left (Roll)← (Left Arrow)ABank Right (Roll)→ (Right Arrow)DRudder (Yaw Left/Right)QEFADEC Boost ThrottleShift—Aerodynamic BrakesSpace—Deploy Counter-FlaresF—Toggle FLIR ThermalV—Inspect DroneMouse Left Drag (Orbit)Mouse Wheel (Zoom)📜 Compliance & Defense StandardsSTANAG 4586: NATO standard for UAV Control System (UCS) interoperability and health reporting.MIL-STD-1553B: Digital time division command/response multiplex data bus format emulation for onboard FADEC telemetry.
