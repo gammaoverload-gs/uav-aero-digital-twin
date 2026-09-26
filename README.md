@@ -19,8 +19,41 @@ Traditional GCS systems operate **reactively** using fixed static thresholds. **
 
 ## ⚙️ System Architecture
 
-+---------------------------------------------------------------------------------------+|                                DATA INGESTION LAYERS                                  ||   +--------------------------+   +--------------------------+   +-------------------+ ||   | 3D Combat Sim WebSocket  |   | UDP CAN/1553B Hardware   |   | Synthetic Mission | ||   | (Dual Controls / 60 FPS) |   | Port 14550 Broadcast     |   | Replay Engine     | ||   +------------+-------------+   +------------+-------------+   +---------+---------+ |+----------------------------------------------|---------------------------/-----------+\                             |                          /v                            v                         v+---------------------------------------------------------------------------------------+|                            PHYSICS-INFORMED TWIN ENGINE                               ||   • ISA Atmosphere Lapse Rate Engine: P_amb(h), T_amb(h), air density rho(h)          ||   • Otto Thermodynamic Indicator: Real-time P-V Loop, IMEP & Thermal Efficiency       ||   • Turbocharger Dynamic Map: Compressor Pressure Ratio vs Corrected Mass Flow        |+---------------------------------------+-----------------------------------------------+|v+---------------------------------------------------------------------------------------+|                          DIAGNOSTIC & PROGNOSTIC CORE (PHM)                           ||   • Extended Kalman Filter (EKF): Dynamic residual tracking with ±2σ uncertainty      ||   • Explainable AI (XAI): Waterfall attribution for CHT drift, oil loss & knock       ||   • Prognostics: Dynamic Remaining Useful Life (RUL in flight hours) calculation      ||   • Electronic Warfare Defense: Kalman innovation gating against sensor spoofing      |+---------------------------------------+-----------------------------------------------+|v+---------------------------------------------------------------------------------------+|                           TACTICAL OPERATOR COMMAND HMI                               ||   • AAA Three.js 3D UAV Hangar: 360° mouse orbit pre-flight inspection suite          ||   • Interactive Flight Sim: 4 procedural biomes (Pokhran, Siachen, SAM Base, LAC)     ||   • Glass Primary Flight Display (PFD): Artificial horizon, airspeed & altitude tape  ||   • Pilot Quick-Action Dock: Limp-Home throttle, mixture quench & stores jettison     ||   • NATO STANAG 4586 & MIL-STD-1553B Bus Monitor & Debrief Exporter                  |+---------------------------------------------------------------------------------------+
----
+```text
++---------------------------------------------------------------------------------------+
+|                                DATA INGESTION LAYERS                                  |
+|   +--------------------------+   +--------------------------+   +-------------------+ |
+|   | 3D Combat Sim WebSocket  |   | UDP CAN/1553B Hardware   |   | Synthetic Mission | |
+|   | (Dual Controls / 60 FPS) |   | Port 14550 Broadcast     |   | Replay Engine     | |
+|   +------------+-------------+   +------------+-------------+   +---------+---------+ |
++----------------\------------------------------|---------------------------/-----------+
+                  \                             |                          /
+                   v                            v                         v
++---------------------------------------------------------------------------------------+
+|                            PHYSICS-INFORMED TWIN ENGINE                               |
+|   • ISA Atmosphere Lapse Rate Engine: P_amb(h), T_amb(h), air density rho(h)          |
+|   • Otto Thermodynamic Indicator: Real-time P-V Loop, IMEP & Thermal Efficiency       |
+|   • Turbocharger Dynamic Map: Compressor Pressure Ratio vs Corrected Mass Flow        |
++---------------------------------------+-----------------------------------------------+
+                                        |
+                                        v
++---------------------------------------------------------------------------------------+
+|                          DIAGNOSTIC & PROGNOSTIC CORE (PHM)                           |
+|   • Extended Kalman Filter (EKF): Dynamic residual tracking with ±2σ uncertainty      |
+|   • Explainable AI (XAI): Waterfall attribution for CHT drift, oil loss & knock       |
+|   • Prognostics: Dynamic Remaining Useful Life (RUL in flight hours) calculation      |
+|   • Electronic Warfare Defense: Kalman innovation gating against sensor spoofing      |
++---------------------------------------+-----------------------------------------------+
+                                        |
+                                        v
++---------------------------------------------------------------------------------------+
+|                           TACTICAL OPERATOR COMMAND HMI                               |
+|   • AAA Three.js 3D UAV Hangar: 360° mouse orbit pre-flight inspection suite          |
+|   • Interactive Flight Sim: 4 procedural biomes (Pokhran, Siachen, SAM Base, LAC)     |
+|   • Glass Primary Flight Display (PFD): Artificial horizon, airspeed & altitude tape  |
+|   • Pilot Quick-Action Dock: Limp-Home throttle, mixture quench & stores jettison     |
+|   • NATO STANAG 4586 & MIL-STD-1553B Bus Monitor & Debrief Exporter                  |
++---------------------------------------------------------------------------------------+
 
 ## 🚀 Key Functional Modules
 
